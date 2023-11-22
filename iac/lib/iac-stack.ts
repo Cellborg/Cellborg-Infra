@@ -304,11 +304,11 @@ export class IacStack extends cdk.Stack {
       }),
     });
     const frontendContainer = frontendTaskDef.addContainer(`cellborg-${env}-frontend`, {
-      image: ecs.ContainerImage.fromEcrRepository(frontendRepo, 'latest'),
+      image: ecs.ContainerImage.fromEcrRepository(frontendRepo, 'newest'),
       memoryLimitMiB: 2048,
       cpu: 1024,
       environment: {
-        DEPLOY_ENV: env,
+        NEXT_PUBLIC_DEPLOY_ENV: env,
         NEXTAUTH_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
       },
       logging: new ecs.AwsLogDriver({
