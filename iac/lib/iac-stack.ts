@@ -53,7 +53,36 @@ export class IacStack extends cdk.Stack {
     }
 
     // STEP 1: VPC & Security Groups
-    const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, { maxAzs: 3 });
+    const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, {
+      maxAzs: 3,
+      cidr: '10.0.0.0/16',
+      natGateways: 1,
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: 'PublicSubnet',
+          subnetType: ec2.SubnetType.PUBLIC,
+        }
+      ],
+    });
+    
+    const qcLogGroup = new logs.LogGroup(this, `Cellborg-${env}-QCLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-QC-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+    const analysisLogGroup = new logs.LogGroup(this, `Cellborg-${env}-AnalysisLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-Analysis-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+    const apiLogGroup = new logs.LogGroup(this, `Cellborg-${env}-ApiLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-Api-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+    const frontendLogGroup = new logs.LogGroup(this, `Cellborg-${env}-FrontendLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-Frontend-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+
     const apiSecGroup = new ec2.SecurityGroup(this, 'ApiSecGroup', {
       vpc,
       description: 'Security group for API',
@@ -188,30 +217,24 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 4096,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-qc_r`,
-        logGroup: new logs.LogGroup(this, 'QCRLogGroup', {
-          logGroupName: `/ecs/${env}-qc_r`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: qcLogGroup,
+        streamPrefix: 'ecs',
       })
     }).addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
       appProtocol: ecs.AppProtocol.http,
-      name: 'http'
+      name: `cellborg-${env}-qc_r-8001-tcp`
     });
     qcTaskDef.addContainer(`cellborg-${env}-qc_py`, {
       image: ecs.ContainerImage.fromEcrRepository(qcPyRepo, 'latest'),
       cpu: 1024,
       environment: {ENVIRONMENT: env},
-      memoryLimitMiB: 2560,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-qc_py`,
-        logGroup: new logs.LogGroup(this, 'QCPyLogGroup', {
-          logGroupName: `/ecs/${env}-qc_py`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      memoryLimitMiB: 4096,
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: qcLogGroup,
+        streamPrefix: 'ecs',
       })
     });
 
@@ -232,12 +255,9 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 2560,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-analysis_py`,
-        logGroup: new logs.LogGroup(this, 'AnalysisPyLogGroup', {
-          logGroupName: `/ecs/${env}-analysis_py`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: analysisLogGroup,
+        streamPrefix: 'ecs',
       })
     });
     analysisTaskDef.addContainer(`cellborg-${env}-analysis_r`, {
@@ -245,18 +265,15 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 4096,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-analysis_r`,
-        logGroup: new logs.LogGroup(this, 'AnalysisRLogGroup', {
-          logGroupName: `/ecs/${env}-analysis_r`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: analysisLogGroup,
+        streamPrefix: 'ecs',
       })
     }).addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
       appProtocol: ecs.AppProtocol.http,
-      name: 'http'
+      name: `cellborg-${env}-analysis_r-8001-tcp`
     });
     
     const apiTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Api_Task`, {
@@ -278,12 +295,9 @@ export class IacStack extends cdk.Stack {
         MONGO_CONNECTION_STRING: "mongodb+srv://nishun2005:ktVWftg1tJdMEKZc@users.xtuucul.mongodb.net/?retryWrites=true&w=majority",
         JWT_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
       },
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-ApiService`,
-        logGroup: new logs.LogGroup(this, 'ApiServiceLogGroup', {
-          logGroupName: `/ecs/${env}-ApiService`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: apiLogGroup,
+        streamPrefix: 'ecs',
       })
     });
     apiContainer.addPortMappings({
@@ -311,12 +325,9 @@ export class IacStack extends cdk.Stack {
         NEXT_PUBLIC_DEPLOY_ENV: env,
         NEXTAUTH_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
       },
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-FrontendService`,
-        logGroup: new logs.LogGroup(this, 'FrontendServiceLogGroup', {
-          logGroupName: `/ecs/${env}-FrontendService`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: frontendLogGroup,
+        streamPrefix: 'ecs',
       })
     });
     frontendContainer.addPortMappings({
