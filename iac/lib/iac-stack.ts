@@ -8,12 +8,23 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
-
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 export class IacStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+    
+    const env = this.node.tryGetContext('environment') || 'dev'
+    const environmentsJSON = this.node.tryGetContext("ENVIRONMENTS")
+    const environment = environmentsJSON[env]
+    const vpcCIDR = environment["vpc_cidr"]
+    const autoScaleProps = environmentsJSON["autoscale_props"]
+    
+    //getting certificate id's from cdk.json
+    const frontendCertificateArn = environment['frontend_cert_arn']
+    const apiCertificateArn = environment['api_cert_arn']
 
-    const env = this.node.tryGetContext('environment') || 'beta';
+    const frontcertificate = Certificate.fromCertificateArn(this, 'frontendCert', frontendCertificateArn);
+    const apicertificate =Certificate.fromCertificateArn(this, 'apiCert', apiCertificateArn)
 
     // STEP 0: S3 buckets
 
@@ -55,12 +66,17 @@ export class IacStack extends cdk.Stack {
     // STEP 1: VPC & Security Groups
     const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, {
       maxAzs: 3,
-      cidr: '10.0.0.0/16',
+      cidr: vpcCIDR,
       natGateways: 1,
       subnetConfiguration: [
         {
           cidrMask: 24,
-          name: 'PublicSubnet',
+          name: 'Compute',
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        },
+        {
+          cidrMask: 24,
+          name: 'Public',
           subnetType: ec2.SubnetType.PUBLIC,
         }
       ],
@@ -134,24 +150,24 @@ export class IacStack extends cdk.Stack {
 
     const apiAutoScalingGroup  = new autoscaling.AutoScalingGroup(this, 'ApiASG', {
       vpc,
-      minCapacity: 1,  
-      desiredCapacity: 2,  
-      maxCapacity: 3, 
-      instanceType: new ec2.InstanceType('c5.large'),
+      minCapacity: autoScaleProps.minCapacity,  
+      desiredCapacity: autoScaleProps.desiredCapacity,  
+      maxCapacity: autoScaleProps.maxCapacity, 
+      instanceType: new ec2.InstanceType(autoScaleProps.instanceType),
       machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
-      spotPrice: '0.04',  // max spot price
+      spotPrice: autoScaleProps.spotPrice,  // max spot price
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.seconds(60) }),
       autoScalingGroupName: 'ApiASG',
       securityGroup: apiSecGroup
     });
     const frontendAutoScalingGroup  = new autoscaling.AutoScalingGroup(this, 'FrontendASG', {
       vpc,
-      minCapacity: 1,  
-      desiredCapacity: 2,  
-      maxCapacity: 3, 
-      instanceType: new ec2.InstanceType('c5.large'),
+      minCapacity: autoScaleProps.minCapacity,  
+      desiredCapacity: autoScaleProps.desiredCapacity,  
+      maxCapacity: autoScaleProps.maxCapacity, 
+      instanceType: new ec2.InstanceType(autoScaleProps.instanceType),
       machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
-      spotPrice: '0.04',  // max spot price
+      spotPrice: autoScaleProps.spotPrice,  // max spot price
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.seconds(60) }),
       autoScalingGroupName: 'FrontendASG',
       securityGroup: frontendSecGroup
@@ -340,9 +356,12 @@ export class IacStack extends cdk.Stack {
     // STEP 4: EC2 Services & Fargate Tasks
     const apiService = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, 'ApiService', {
       cluster: apiCluster,
+      certificate: apicertificate,
       taskDefinition: apiTaskDef,
       desiredCount: 1, // Initial count, this will change based on auto-scaling policy
       publicLoadBalancer: true,
+      protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+      redirectHTTP: true,
       listenerPort: 443,
       serviceName: `Cellborg-${env}-Api`,
       healthCheckGracePeriod: cdk.Duration.seconds(60)
@@ -354,9 +373,12 @@ export class IacStack extends cdk.Stack {
 
     const frontendService = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, 'FrontendService', {
       cluster: frontendCluster,
+      certificate: frontcertificate,
       taskDefinition: frontendTaskDef,
       desiredCount: 1, // Initial count, this will change based on auto-scaling policy
       publicLoadBalancer: true,
+      protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+      redirectHTTP: true,
       listenerPort: 443,
       serviceName: `Cellborg-${env}-Frontend`,
       healthCheckGracePeriod: cdk.Duration.seconds(60)
