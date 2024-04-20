@@ -23,4 +23,4 @@ jobs:
         npm install -g aws-cdk
         npm install
         npm run build
-        cdk deploy --context environment=beta
+        cdk deploy --context environment=beta --require-approval never
