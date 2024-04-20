@@ -8,12 +8,23 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
-
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 export class IacStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+    
+    const env = this.node.tryGetContext('environment') || 'dev'
+    const environmentsJSON = this.node.tryGetContext("ENVIRONMENTS")
+    const environment = environmentsJSON[env]
+    const vpcCIDR = environment["vpc_cidr"]
+    const autoScaleProps = environmentsJSON["autoscale_props"]
+    
+    //getting certificate id's from cdk.json
+    const frontendCertificateArn = environment['frontend_cert_arn']
+    const apiCertificateArn = environment['api_cert_arn']
 
-    const env = this.node.tryGetContext('environment') || 'beta';
+    const frontcertificate = Certificate.fromCertificateArn(this, 'frontendCert', frontendCertificateArn);
+    const apicertificate =Certificate.fromCertificateArn(this, 'apiCert', apiCertificateArn)
 
     // STEP 0: S3 buckets
 
@@ -53,7 +64,41 @@ export class IacStack extends cdk.Stack {
     }
 
     // STEP 1: VPC & Security Groups
-    const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, { maxAzs: 3 });
+    const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, {
+      maxAzs: 3,
+      cidr: vpcCIDR,
+      natGateways: 1,
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: 'Compute',
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        },
+        {
+          cidrMask: 24,
+          name: 'Public',
+          subnetType: ec2.SubnetType.PUBLIC,
+        }
+      ],
+    });
+    
+    const qcLogGroup = new logs.LogGroup(this, `Cellborg-${env}-QCLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-QC-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+    const analysisLogGroup = new logs.LogGroup(this, `Cellborg-${env}-AnalysisLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-Analysis-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+    const apiLogGroup = new logs.LogGroup(this, `Cellborg-${env}-ApiLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-Api-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+    const frontendLogGroup = new logs.LogGroup(this, `Cellborg-${env}-FrontendLogGroup`, {
+      logGroupName: `/ecs/Cellborg-${env}-Frontend-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+    });
+
     const apiSecGroup = new ec2.SecurityGroup(this, 'ApiSecGroup', {
       vpc,
       description: 'Security group for API',
@@ -105,24 +150,24 @@ export class IacStack extends cdk.Stack {
 
     const apiAutoScalingGroup  = new autoscaling.AutoScalingGroup(this, 'ApiASG', {
       vpc,
-      minCapacity: 1,  
-      desiredCapacity: 2,  
-      maxCapacity: 3, 
-      instanceType: new ec2.InstanceType('c5.large'),
+      minCapacity: autoScaleProps.minCapacity,  
+      desiredCapacity: autoScaleProps.desiredCapacity,  
+      maxCapacity: autoScaleProps.maxCapacity, 
+      instanceType: new ec2.InstanceType(autoScaleProps.instanceType),
       machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
-      spotPrice: '0.04',  // max spot price
+      spotPrice: autoScaleProps.spotPrice,  // max spot price
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.seconds(60) }),
       autoScalingGroupName: 'ApiASG',
       securityGroup: apiSecGroup
     });
     const frontendAutoScalingGroup  = new autoscaling.AutoScalingGroup(this, 'FrontendASG', {
       vpc,
-      minCapacity: 1,  
-      desiredCapacity: 2,  
-      maxCapacity: 3, 
-      instanceType: new ec2.InstanceType('c5.large'),
+      minCapacity: autoScaleProps.minCapacity,  
+      desiredCapacity: autoScaleProps.desiredCapacity,  
+      maxCapacity: autoScaleProps.maxCapacity, 
+      instanceType: new ec2.InstanceType(autoScaleProps.instanceType),
       machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
-      spotPrice: '0.04',  // max spot price
+      spotPrice: autoScaleProps.spotPrice,  // max spot price
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.seconds(60) }),
       autoScalingGroupName: 'FrontendASG',
       securityGroup: frontendSecGroup
@@ -188,30 +233,24 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 4096,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-qc_r`,
-        logGroup: new logs.LogGroup(this, 'QCRLogGroup', {
-          logGroupName: `/ecs/${env}-qc_r`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: qcLogGroup,
+        streamPrefix: 'ecs',
       })
     }).addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
       appProtocol: ecs.AppProtocol.http,
-      name: 'http'
+      name: `cellborg-${env}-qc_r-8001-tcp`
     });
     qcTaskDef.addContainer(`cellborg-${env}-qc_py`, {
       image: ecs.ContainerImage.fromEcrRepository(qcPyRepo, 'latest'),
       cpu: 1024,
       environment: {ENVIRONMENT: env},
-      memoryLimitMiB: 2560,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-qc_py`,
-        logGroup: new logs.LogGroup(this, 'QCPyLogGroup', {
-          logGroupName: `/ecs/${env}-qc_py`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      memoryLimitMiB: 4096,
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: qcLogGroup,
+        streamPrefix: 'ecs',
       })
     });
 
@@ -232,12 +271,9 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 2560,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-analysis_py`,
-        logGroup: new logs.LogGroup(this, 'AnalysisPyLogGroup', {
-          logGroupName: `/ecs/${env}-analysis_py`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: analysisLogGroup,
+        streamPrefix: 'ecs',
       })
     });
     analysisTaskDef.addContainer(`cellborg-${env}-analysis_r`, {
@@ -245,18 +281,15 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 4096,
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-analysis_r`,
-        logGroup: new logs.LogGroup(this, 'AnalysisRLogGroup', {
-          logGroupName: `/ecs/${env}-analysis_r`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: analysisLogGroup,
+        streamPrefix: 'ecs',
       })
     }).addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
       appProtocol: ecs.AppProtocol.http,
-      name: 'http'
+      name: `cellborg-${env}-analysis_r-8001-tcp`
     });
     
     const apiTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Api_Task`, {
@@ -278,12 +311,9 @@ export class IacStack extends cdk.Stack {
         MONGO_CONNECTION_STRING: "mongodb+srv://nishun2005:ktVWftg1tJdMEKZc@users.xtuucul.mongodb.net/?retryWrites=true&w=majority",
         JWT_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
       },
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-ApiService`,
-        logGroup: new logs.LogGroup(this, 'ApiServiceLogGroup', {
-          logGroupName: `/ecs/${env}-ApiService`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: apiLogGroup,
+        streamPrefix: 'ecs',
       })
     });
     apiContainer.addPortMappings({
@@ -311,12 +341,9 @@ export class IacStack extends cdk.Stack {
         NEXT_PUBLIC_DEPLOY_ENV: env,
         NEXTAUTH_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
       },
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: `${env}-FrontendService`,
-        logGroup: new logs.LogGroup(this, 'FrontendServiceLogGroup', {
-          logGroupName: `/ecs/${env}-FrontendService`,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        })
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: frontendLogGroup,
+        streamPrefix: 'ecs',
       })
     });
     frontendContainer.addPortMappings({
@@ -329,9 +356,12 @@ export class IacStack extends cdk.Stack {
     // STEP 4: EC2 Services & Fargate Tasks
     const apiService = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, 'ApiService', {
       cluster: apiCluster,
+      certificate: apicertificate,
       taskDefinition: apiTaskDef,
       desiredCount: 1, // Initial count, this will change based on auto-scaling policy
       publicLoadBalancer: true,
+      protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+      redirectHTTP: true,
       listenerPort: 443,
       serviceName: `Cellborg-${env}-Api`,
       healthCheckGracePeriod: cdk.Duration.seconds(60)
@@ -343,9 +373,12 @@ export class IacStack extends cdk.Stack {
 
     const frontendService = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, 'FrontendService', {
       cluster: frontendCluster,
+      certificate: frontcertificate,
       taskDefinition: frontendTaskDef,
       desiredCount: 1, // Initial count, this will change based on auto-scaling policy
       publicLoadBalancer: true,
+      protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
+      redirectHTTP: true,
       listenerPort: 443,
       serviceName: `Cellborg-${env}-Frontend`,
       healthCheckGracePeriod: cdk.Duration.seconds(60)
