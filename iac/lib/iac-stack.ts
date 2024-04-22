@@ -82,21 +82,14 @@ export class IacStack extends cdk.Stack {
       ],
     });
     
-    /*const qcLogGroup = new logs.LogGroup(this, `Cellborg-${env}-QCLogGroup`, {
+    const qcLogGroup = new logs.LogGroup(this, `Cellborg-${env}-QCLogGroup`, {
       logGroupName: `/ecs/Cellborg-${env}-QC-Task`,
       removalPolicy: cdk.RemovalPolicy.DESTROY, 
-    });*/
-
-    /*const logStream = new logs.LogStream(this, 'MyLogStream', {
-      logGroup: qcLogGroup,
-      logStreamName: 'ecs',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });*/
-
-    /*const analysisLogGroup = new logs.LogGroup(this, `Cellborg-${env}-AnalysisLogGroup`, {
+    });
+    const analysisLogGroup = new logs.LogGroup(this, `Cellborg-${env}-AnalysisLogGroup`, {
       logGroupName: `/ecs/Cellborg-${env}-Analysis-Task`,
       removalPolicy: cdk.RemovalPolicy.DESTROY, 
-    });*/
+    });
     const apiLogGroup = new logs.LogGroup(this, `Cellborg-${env}-ApiLogGroup`, {
       logGroupName: `/ecs/Cellborg-${env}-Api-Task`,
       removalPolicy: cdk.RemovalPolicy.DESTROY, 
@@ -251,6 +244,10 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 4096,
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: qcLogGroup,
+        streamPrefix: 'ecs',
+      })
     });
 
     const analysisTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-Analysis-Task`, {
@@ -270,12 +267,20 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 2560,
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: analysisLogGroup,
+        streamPrefix: 'ecs',
+      })
     });
     analysisTaskDef.addContainer(`cellborg-${env}-analysis_r`, {
       image: ecs.ContainerImage.fromEcrRepository(analysisRRepo, 'latest'),
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 4096,
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: analysisLogGroup,
+        streamPrefix: 'ecs',
+      })
     }).addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
