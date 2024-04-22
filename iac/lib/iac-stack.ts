@@ -233,6 +233,9 @@ export class IacStack extends cdk.Stack {
       cpu: 1024,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 4096,
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: qcLogGroup,
+        streamPrefix: 'ecs',
     }).addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
