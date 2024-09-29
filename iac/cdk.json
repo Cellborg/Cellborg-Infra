@@ -75,7 +75,7 @@
       "autoscale_props":{
         "minCapacity": 1,  
         "desiredCapacity": 1,  
-        "maxCapacity": 2, 
+        "maxCapacity": 3, 
         "instanceType": "c5.large",
         "spotPrice": "0.04"
       }
