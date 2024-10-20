@@ -26,7 +26,7 @@ export class IacStack extends cdk.Stack {
     const frontcertificate = Certificate.fromCertificateArn(this, 'frontendCert', frontendCertificateArn);
     const apicertificate =Certificate.fromCertificateArn(this, 'apiCert', apiCertificateArn)
 
-    const URLTable = new CfnMapping(this, 'URLTable', {
+    const URLTable = new cdk.CfnMapping(this, 'URLTable', {
       mapping: {
         'beta': {
           frontendURL: 'https://beta.cellborg.bio',
