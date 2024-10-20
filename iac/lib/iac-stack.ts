@@ -26,6 +26,20 @@ export class IacStack extends cdk.Stack {
     const frontcertificate = Certificate.fromCertificateArn(this, 'frontendCert', frontendCertificateArn);
     const apicertificate =Certificate.fromCertificateArn(this, 'apiCert', apiCertificateArn)
 
+    const URLTable = new CfnMapping(this, 'URLTable', {
+      mapping: {
+        'beta': {
+          frontendURL: 'https://beta.cellborg.bio',
+          apiURL: 'https://beta.api.cellborg.bio'
+        },
+        'prod': {
+          frontendURL: 'https://cellborg.bio',
+          apiURL: 'https://api.cellborg.bio'
+        }
+      }
+    });
+    
+    regionTable.findInMap(Aws.REGION, 'regionName')
     // STEP 0: S3 buckets
 
     const bucketNames = [
@@ -339,7 +353,8 @@ export class IacStack extends cdk.Stack {
       cpu: 512,
       environment: {
         NEXT_PUBLIC_DEPLOY_ENV: env,
-        NEXTAUTH_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
+        NEXTAUTH_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A=",
+        NEXTAUTH_URL: URLTable.findInMap(env, 'fronendURL')
       },
       logging: ecs.LogDrivers.awsLogs({
         logGroup: frontendLogGroup,
