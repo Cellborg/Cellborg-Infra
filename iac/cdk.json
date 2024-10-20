@@ -76,8 +76,8 @@
         "minCapacity": 1,  
         "desiredCapacity": 1,  
         "maxCapacity": 3, 
-        "instanceType": "c5.large",
-        "spotPrice": "0.04"
+        "instanceType": "t2.medium",
+        "spotPrice": "0.02"
       }
 
     }
