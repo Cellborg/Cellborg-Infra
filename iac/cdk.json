@@ -62,7 +62,9 @@
     "ENVIRONMENTS": {
 
       "prod": {
-        "vpc_cidr": "10.4.0.0/20"
+        "vpc_cidr": "10.4.0.0/20",
+        "frontendURL": "https://cellborg.bio",
+        "apiURL": "https://api.cellborg.bio"
       },
       "dev":{
         "vpc_cidr": "10.2.0.0/20"
@@ -70,7 +72,9 @@
       "beta":{
         "vpc_cidr": "53.15.0.0/20",
         "frontend_cert_arn": "arn:aws:acm:us-west-2:865984939637:certificate/ed8494da-9f35-44e1-b5ec-e9c3d000bd0a",
-        "api_cert_arn": "arn:aws:acm:us-west-2:865984939637:certificate/ce66b485-650b-4004-aa6f-1107387ac31d"
+        "api_cert_arn": "arn:aws:acm:us-west-2:865984939637:certificate/ce66b485-650b-4004-aa6f-1107387ac31d",
+        "frontendURL": "https://beta.cellborg.bio",
+        "apiURL": "https://beta.api.cellborg.bio"
       },
       "autoscale_props":{
         "minCapacity": 1,  
