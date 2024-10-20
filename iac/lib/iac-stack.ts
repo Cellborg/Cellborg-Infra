@@ -304,8 +304,8 @@ export class IacStack extends cdk.Stack {
     });
     const apiContainer = apiTaskDef.addContainer(`cellborg-${env}-api`, {
       image: ecs.ContainerImage.fromEcrRepository(apiRepo, 'latest'),
-      memoryLimitMiB: 2560,
-      cpu: 1024,
+      memoryLimitMiB: 1024,
+      cpu: 512,
       environment: {
         NODE_ENV: env,
         MONGO_CONNECTION_STRING: "mongodb+srv://nishun2005:ktVWftg1tJdMEKZc@users.xtuucul.mongodb.net/?retryWrites=true&w=majority",
@@ -335,8 +335,8 @@ export class IacStack extends cdk.Stack {
     });
     const frontendContainer = frontendTaskDef.addContainer(`cellborg-${env}-frontend`, {
       image: ecs.ContainerImage.fromEcrRepository(frontendRepo, 'newest'),
-      memoryLimitMiB: 2560,
-      cpu: 1024,
+      memoryLimitMiB: 1024,
+      cpu: 512,
       environment: {
         NEXT_PUBLIC_DEPLOY_ENV: env,
         NEXTAUTH_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
