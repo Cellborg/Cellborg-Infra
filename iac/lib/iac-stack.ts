@@ -39,7 +39,6 @@ export class IacStack extends cdk.Stack {
       }
     });
     
-    regionTable.findInMap(Aws.REGION, 'regionName')
     // STEP 0: S3 buckets
 
     const bucketNames = [
