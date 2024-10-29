@@ -59,7 +59,7 @@ export class IacStack extends cdk.Stack {
               'http://localhost:3000',
               'http://localhost:4200'
             ], 
-            allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],  
+            allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT, s3.HttpMethods.HEAD],  
             allowedHeaders: ['*'], 
           },
         ], 
