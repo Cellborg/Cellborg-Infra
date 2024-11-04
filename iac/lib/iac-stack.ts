@@ -225,7 +225,7 @@ export class IacStack extends cdk.Stack {
     
     const qcTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-QC-Task`, {
       family: `Cellborg-${env}-QC-Task`,
-      cpu: 3072,
+      cpu: 4096,
       memoryLimitMiB: 12288,
       runtimePlatform: {cpuArchitecture: ecs.CpuArchitecture.X86_64, operatingSystemFamily: ecs.OperatingSystemFamily.LINUX},
       taskRole: iam.Role.fromRoleArn(this, 'QCTaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole'),
@@ -233,7 +233,7 @@ export class IacStack extends cdk.Stack {
     });
     qcTaskDef.addContainer(`cellborg-${env}-qc_pyrunner`, {
       image: ecs.ContainerImage.fromEcrRepository(qcPyRunnerRepo, 'latest'),
-      cpu: 2048,
+      cpu: 3072,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 8192,
       logging: ecs.LogDrivers.awsLogs({
