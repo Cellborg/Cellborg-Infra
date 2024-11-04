@@ -225,8 +225,8 @@ export class IacStack extends cdk.Stack {
     
     const qcTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-QC-Task`, {
       family: `Cellborg-${env}-QC-Task`,
-      cpu: 2048,
-      memoryLimitMiB: 8192,
+      cpu: 3072,
+      memoryLimitMiB: 12288,
       runtimePlatform: {cpuArchitecture: ecs.CpuArchitecture.X86_64, operatingSystemFamily: ecs.OperatingSystemFamily.LINUX},
       taskRole: iam.Role.fromRoleArn(this, 'QCTaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole'),
       executionRole: iam.Role.fromRoleArn(this, 'QCExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole'),
