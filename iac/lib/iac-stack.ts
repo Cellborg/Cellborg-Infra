@@ -233,7 +233,7 @@ export class IacStack extends cdk.Stack {
     });
     qcTaskDef.addContainer(`cellborg-${env}-qc_pyrunner`, {
       image: ecs.ContainerImage.fromEcrRepository(qcPyRunnerRepo, 'latest'),
-      cpu: 3072,
+      cpu: 2048,
       environment: {ENVIRONMENT: env},
       memoryLimitMiB: 8192,
       logging: ecs.LogDrivers.awsLogs({
