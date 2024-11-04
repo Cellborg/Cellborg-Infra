@@ -234,7 +234,11 @@ export class IacStack extends cdk.Stack {
     qcTaskDef.addContainer(`cellborg-${env}-qc_pyrunner`, {
       image: ecs.ContainerImage.fromEcrRepository(qcPyRunnerRepo, 'latest'),
       cpu: 2048,
-      environment: {ENVIRONMENT: env},
+      environment: {
+        ENVIRONMENT: env,
+        AWS_ACCESS_KEY_ID: environment['AWS_ACCESS_KEY_ID'],
+        AWS_SECRET_ACCESS_KEY: environment['AWS_SECRET_ACCESS_KEY']
+      },
       memoryLimitMiB: 8192,
       logging: ecs.LogDrivers.awsLogs({
         logGroup: qcLogGroup,

@@ -74,7 +74,9 @@
         "frontend_cert_arn": "arn:aws:acm:us-west-2:865984939637:certificate/ed8494da-9f35-44e1-b5ec-e9c3d000bd0a",
         "api_cert_arn": "arn:aws:acm:us-west-2:865984939637:certificate/ce66b485-650b-4004-aa6f-1107387ac31d",
         "frontendURL": "https://beta.cellborg.bio",
-        "apiURL": "https://beta.api.cellborg.bio"
+        "apiURL": "https://beta.api.cellborg.bio",
+        "AWS_ACCESS_KEY_ID": "AKIA4TIFZQZ263UK2IEQ",
+        "AWS_SECRET_ACCESS_KEY":"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"
       },
       "autoscale_props":{
         "minCapacity": 1,  
