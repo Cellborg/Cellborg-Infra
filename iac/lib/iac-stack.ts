@@ -216,7 +216,7 @@ export class IacStack extends cdk.Stack {
     // ECR Repositories (assuming they are already created)
     const apiRepo = ecr.Repository.fromRepositoryName(this, 'ApiRepo', `cellborg-${env}-api`);
     const frontendRepo = ecr.Repository.fromRepositoryName(this, 'FrontendRepo', `cellborg-${env}-frontend`);
-    const qcRRepo = ecr.Repository.fromRepositoryName(this, 'QcRRepo', `cellborg-${env}-qc_r`);
+    const qcPyRunnerRepo = ecr.Repository.fromRepositoryName(this, 'QcPyRunnerRepo', `cellborg-${env}-qc_pyrunner`);
     const qcPyRepo = ecr.Repository.fromRepositoryName(this, 'QcPyRepo', `cellborg-${env}-qc_py`);
     const analysisRRepo = ecr.Repository.fromRepositoryName(this, 'AnalysisRRepo', `cellborg-${env}-analysis_r`);
     const analysisPyRepo = ecr.Repository.fromRepositoryName(this, 'AnalysisPyRepo', `cellborg-${env}-analysis_py`);
@@ -231,20 +231,27 @@ export class IacStack extends cdk.Stack {
       taskRole: iam.Role.fromRoleArn(this, 'QCTaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole'),
       executionRole: iam.Role.fromRoleArn(this, 'QCExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole'),
     });
-    qcTaskDef.addContainer(`cellborg-${env}-qc_r`, {
-      image: ecs.ContainerImage.fromEcrRepository(qcRRepo, 'latest'),
-      cpu: 1024,
+    qcTaskDef.addContainer(`cellborg-${env}-qc_pyrunner`, {
+      image: ecs.ContainerImage.fromEcrRepository(qcPyRunnerRepo, 'latest'),
+      cpu: 2048,
       environment: {ENVIRONMENT: env},
-      memoryLimitMiB: 4096,
+      memoryLimitMiB: 8192,
       logging: ecs.LogDrivers.awsLogs({
         logGroup: qcLogGroup,
         streamPrefix: 'ecs',
-      })
+      }),
+      healthCheck: { // Add the health check here
+        command: ['CMD-SHELL', 'curl -f http://localhost:8001/health || exit 1'],
+        interval: cdk.Duration.seconds(30),
+        retries: 5,
+        startPeriod: cdk.Duration.seconds(5),
+        timeout: cdk.Duration.seconds(2),
+      },
     }).addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
       appProtocol: ecs.AppProtocol.http,
-      name: `cellborg-${env}-qc_r-8001-tcp`
+      name: `cellborg-${env}-qc_pyrunner-8001-tcp`
     });
     qcTaskDef.addContainer(`cellborg-${env}-qc_py`, {
       image: ecs.ContainerImage.fromEcrRepository(qcPyRepo, 'latest'),
