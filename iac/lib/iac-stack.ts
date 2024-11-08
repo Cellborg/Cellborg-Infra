@@ -231,7 +231,8 @@ export class IacStack extends cdk.Stack {
       taskRole: iam.Role.fromRoleArn(this, 'QCTaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole'),
       executionRole: iam.Role.fromRoleArn(this, 'QCExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole'),
     });
-    qcTaskDef.addContainer(`cellborg-${env}-qc_pyrunner`, {
+    const qc_runner_container = new ecs.ContainerDefinition(this,`cellborg-${env}-qc_pyrunner`,{
+      taskDefinition: qcTaskDef,
       image: ecs.ContainerImage.fromEcrRepository(qcPyRunnerRepo, 'latest'),
       cpu: 2048,
       environment: {
@@ -251,13 +252,18 @@ export class IacStack extends cdk.Stack {
         startPeriod: cdk.Duration.seconds(5),
         timeout: cdk.Duration.seconds(2),
       },
-    }).addPortMappings({
+    })
+
+    qc_runner_container.addPortMappings({
       containerPort: 8001,
       protocol: ecs.Protocol.TCP,
       appProtocol: ecs.AppProtocol.http,
       name: `cellborg-${env}-qc_pyrunner-8001-tcp`
     });
-    qcTaskDef.addContainer(`cellborg-${env}-qc_py`, {
+    
+
+    const qc_py_container = new ecs.ContainerDefinition(this,`cellborg-${env}-qc_py`,{
+      taskDefinition: qcTaskDef,
       image: ecs.ContainerImage.fromEcrRepository(qcPyRepo, 'latest'),
       cpu: 1024,
       environment: {ENVIRONMENT: env},
@@ -266,7 +272,14 @@ export class IacStack extends cdk.Stack {
         logGroup: qcLogGroup,
         streamPrefix: 'ecs',
       })
-    });
+    })
+    
+    qc_py_container.addContainerDependencies(
+      {
+        container: qc_runner_container,
+        condition: ecs.ContainerDependencyCondition.HEALTHY
+      }
+    );
 
     const analysisTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-Analysis-Task`, {
       family: `Cellborg-${env}-Analysis-Task`,
