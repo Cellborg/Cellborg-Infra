@@ -154,6 +154,7 @@ export class IacStack extends cdk.Stack {
 
     const paCluster = new ecs.Cluster(this, `Cellborg-${env}-PA-Cluster`, {
       vpc,
+      enableFargateCapacityProviders: true,
       clusterName: `Cellborg-${env}-PA-Cluster`
     })
 
