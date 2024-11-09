@@ -89,6 +89,12 @@ export class IacStack extends cdk.Stack {
       logGroupName: `/ecs/Cellborg-${env}-QC-Task`,
       removalPolicy: cdk.RemovalPolicy.DESTROY, 
     });
+
+    const paLogGroup = new logs.LogGroup(this, `Cellborg-${env}-PALogGroup`,{
+      logGroupName: `/ecs/Cellborg-${env}-PA-Task`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     const analysisLogGroup = new logs.LogGroup(this, `Cellborg-${env}-AnalysisLogGroup`, {
       logGroupName: `/ecs/Cellborg-${env}-Analysis-Task`,
       removalPolicy: cdk.RemovalPolicy.DESTROY, 
@@ -131,7 +137,7 @@ export class IacStack extends cdk.Stack {
     });
     frontendAlbSecGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'Allow HTTPS traffic');
 
-    //STEP 2: ECS Clusters (frontend, api, qc, analysis)
+    //STEP 2: ECS Clusters (frontend, api, qc, pa, analysis)
     const apiCluster = new ecs.Cluster(this, `Cellborg-${env}-Api-Cluster`, {
       vpc,
       clusterName: `Cellborg-${env}-Api-Cluster`
@@ -145,6 +151,12 @@ export class IacStack extends cdk.Stack {
       enableFargateCapacityProviders: true,
       clusterName: `Cellborg-${env}-QC-Cluster`
     });
+
+    const paCluster = new ecs.Cluster(this, `Cellborg-${env}-PA-Cluster`, {
+      vpc,
+      clusterName: `Cellborg-${env}-PA-Cluster`
+    })
+
     const analysisCluster = new ecs.Cluster(this, `Cellborg-${env}-Analysis-Cluster`, {
       vpc,
       enableFargateCapacityProviders: true,
@@ -200,6 +212,17 @@ export class IacStack extends cdk.Stack {
         weight: 1,
       },
     ]);
+
+    paCluster.addDefaultCapacityProviderStrategy([
+      {
+        capacityProvider: 'FARGATE_SPOT',
+        weight:2,
+      },
+      {
+        capacityProvider: 'FARGATE',
+        weight: 1
+      }
+    ])
     qcCluster.addDefaultCapacityProviderStrategy([
       {
         capacityProvider: 'FARGATE_SPOT',
@@ -218,11 +241,15 @@ export class IacStack extends cdk.Stack {
     const frontendRepo = ecr.Repository.fromRepositoryName(this, 'FrontendRepo', `cellborg-${env}-frontend`);
     const qcPyRunnerRepo = ecr.Repository.fromRepositoryName(this, 'QcPyRunnerRepo', `cellborg-${env}-qc_pyrunner`);
     const qcPyRepo = ecr.Repository.fromRepositoryName(this, 'QcPyRepo', `cellborg-${env}-qc_py`);
+    const paPyRepo = ecr.Repository.fromRepositoryName(this, 'PaPyRepo', `cellborg-${env}-pa_py`);//change to name of ecr repo (need to create)
+    const paPyRunnerRepo = ecr.Repository.fromRepositoryName(this, 'PaPyRunnerRepo',`cellborg-${env}-pa_pyrunner`);//change to name of ecr repo (need to create)
     const analysisRRepo = ecr.Repository.fromRepositoryName(this, 'AnalysisRRepo', `cellborg-${env}-analysis_r`);
     const analysisPyRepo = ecr.Repository.fromRepositoryName(this, 'AnalysisPyRepo', `cellborg-${env}-analysis_py`);
 
     // Task Definitions
     
+
+    // --------- QC Task Definition --------
     const qcTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-QC-Task`, {
       family: `Cellborg-${env}-QC-Task`,
       cpu: 4096,
@@ -273,7 +300,7 @@ export class IacStack extends cdk.Stack {
         streamPrefix: 'ecs',
       })
     })
-    
+
     qc_py_container.addContainerDependencies(
       {
         container: qc_runner_container,
@@ -281,6 +308,68 @@ export class IacStack extends cdk.Stack {
       }
     );
 
+    //------ PA Task Definition ------
+    const paTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-PA-Task`, {
+      family: `Cellborg-${env}-PA-Task`,
+      cpu: 4096, // adjust cpu allocation
+      memoryLimitMiB: 12288, // adjust memory allocation
+      runtimePlatform: {cpuArchitecture: ecs.CpuArchitecture.X86_64, operatingSystemFamily: ecs.OperatingSystemFamily.LINUX},
+      taskRole: iam.Role.fromRoleArn(this, 'PATaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole'),//same permissions as qc
+      executionRole: iam.Role.fromRoleArn(this, 'PAExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole'),
+    });
+
+    const pa_runner_container = new ecs.ContainerDefinition(this,`cellborg-${env}-pa_pyrunner`,{
+      taskDefinition: qcTaskDef,
+      image: ecs.ContainerImage.fromEcrRepository(paPyRunnerRepo, 'latest'),
+      cpu: 2048, // change cpu alloc
+      environment: {
+        ENVIRONMENT: env,
+        AWS_ACCESS_KEY_ID: environment['AWS_ACCESS_KEY_ID'],
+        AWS_SECRET_ACCESS_KEY: environment['AWS_SECRET_ACCESS_KEY']
+      },
+      memoryLimitMiB: 8192, //change memory alloc
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: paLogGroup,
+        streamPrefix: 'ecs',
+      }),
+      healthCheck: { // Add the health check here
+        command: ['CMD-SHELL', 'curl -f http://localhost:8001/health || exit 1'],
+        interval: cdk.Duration.seconds(30),
+        retries: 5,
+        startPeriod: cdk.Duration.seconds(5),
+        timeout: cdk.Duration.seconds(2),
+      },
+    })
+
+    pa_runner_container.addPortMappings({
+      containerPort: 8001,
+      protocol: ecs.Protocol.TCP,
+      appProtocol: ecs.AppProtocol.http,
+      name: `cellborg-${env}-pa_pyrunner-8001-tcp`
+    });
+
+    const pa_py_container = new ecs.ContainerDefinition(this,`cellborg-${env}-pa_py`,{
+      taskDefinition: paTaskDef,
+      image: ecs.ContainerImage.fromEcrRepository(paPyRepo, 'latest'),
+      cpu: 1024,
+      environment: {ENVIRONMENT: env},
+      memoryLimitMiB: 4096,
+      logging: ecs.LogDrivers.awsLogs({
+        logGroup: paLogGroup,
+        streamPrefix: 'ecs',
+      })
+    })
+
+    pa_py_container.addContainerDependencies(
+      {
+        container: pa_runner_container,
+        condition: ecs.ContainerDependencyCondition.HEALTHY
+      }
+    );
+
+
+
+    // ------- Analysis Task Definition -------
     const analysisTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-Analysis-Task`, {
       family: `Cellborg-${env}-Analysis-Task`,
       cpu: 2048,
