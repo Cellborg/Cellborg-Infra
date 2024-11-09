@@ -320,7 +320,7 @@ export class IacStack extends cdk.Stack {
     });
 
     const pa_runner_container = new ecs.ContainerDefinition(this,`cellborg-${env}-pa_pyrunner`,{
-      taskDefinition: qcTaskDef,
+      taskDefinition: paTaskDef,
       image: ecs.ContainerImage.fromEcrRepository(paPyRunnerRepo, 'latest'),
       cpu: 2048, // change cpu alloc
       environment: {
