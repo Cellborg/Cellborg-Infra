@@ -70,7 +70,6 @@ export class IacStack extends cdk.Stack {
     const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, {
       maxAzs: 3,
       cidr: vpcCIDR,
-      natGateways: 1,
       subnetConfiguration: [
         {
           cidrMask: 24,
@@ -84,6 +83,36 @@ export class IacStack extends cdk.Stack {
         }
       ],
     });
+
+    // set up nat instance and route table
+    const natInstance = new ec2.Instance(this, `NATInstance-${env}`, {
+      vpc,
+      instanceType: new ec2.InstanceType('t2.micro'), // Adjust instance type as needed
+      machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
+      vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+      //keyName: 'your-key-pair', Ensure you have an appropriate key pair configured
+    });
+    
+    // Enable IP forwarding on the NAT instance
+    natInstance.addUserData(
+      'sysctl -w net.ipv4.ip_forward=1',
+      'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE'
+    );
+    
+    // Assign an Elastic IP to the NAT instance
+    const elasticIp = new ec2.CfnEIP(this, `NATEIP-${env}`);
+    new ec2.CfnEIPAssociation(this, `NATEIPAssoc-${env}`, {
+      eip: elasticIp.ref,
+      instanceId: natInstance.instanceId,
+    });
+
+    const privateRouteTable = new ec2.CfnRoute(this, 'PrivateRoute', {
+      routeTableId: vpc.privateSubnets[0].routeTable.routeTableId,
+      destinationCidrBlock: '0.0.0.0/0',
+      instanceId: natInstance.instanceId, // Direct traffic to the NAT Instance
+    });
+    
+    
     
     const qcLogGroup = new logs.LogGroup(this, `Cellborg-${env}-QCLogGroup`, {
       logGroupName: `/ecs/Cellborg-${env}-QC-Task`,
