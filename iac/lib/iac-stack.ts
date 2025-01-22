@@ -488,7 +488,7 @@ export class IacStack extends cdk.Stack {
     apiService.targetGroup.configureHealthCheck({
       path: "/api/test"
     });
-
+ 
     const frontendService = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, 'FrontendService', {
       cluster: frontendCluster,
       certificate: frontcertificate,
