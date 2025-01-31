@@ -33,7 +33,23 @@ export class IacStack extends cdk.Stack {
 
     const frontcertificate = Certificate.fromCertificateArn(this, 'frontendCert', frontendCertificateArn);
     const apicertificate =Certificate.fromCertificateArn(this, 'apiCert', apiCertificateArn)
-  
+    
+
+
+    // Add this to your IacStack class in iac/lib/iac-stack.ts
+    const githubActionsRole = new iam.Role(this, 'GitHubActionsRole', {
+      roleName: 'GitHubActionsRole',
+      assumedBy: new iam.WebIdentityPrincipal('token.actions.githubusercontent.com', {
+        'StringEquals': {
+          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+          'token.actions.githubusercontent.com:sub': `repo:Cellborg/Cellborg-Infra:ref:refs/heads/beta`
+        }
+      }),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')
+      ]
+    });
+
     // STEP 0: S3 buckets
 
     const bucketNames = [
