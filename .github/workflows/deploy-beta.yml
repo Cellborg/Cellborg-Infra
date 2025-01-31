@@ -23,4 +23,5 @@ jobs:
         npm install -g aws-cdk
         npm install
         npm run build
+        cdk bootstrap aws://536697236385/us-east-1
         cdk deploy --context environment=beta --require-approval never
