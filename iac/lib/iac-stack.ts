@@ -122,11 +122,12 @@ export class IacStack extends cdk.Stack {
       instanceId: natInstance.instanceId,
     });
 
-    const privateRouteTable = new ec2.CfnRoute(this, 'PrivateRoute', {
-      routeTableId: vpc.privateSubnets[0].routeTable.routeTableId,
-      destinationCidrBlock: '0.0.0.0/0',
-      instanceId: natInstance.instanceId, // Direct traffic to the NAT Instance
-    });
+    // Remove or comment out the route creation if 0.0.0.0/0 is already set:
+    // new ec2.CfnRoute(this, 'PrivateRoute', {
+    //   routeTableId: yourRouteTableId,
+    //   destinationCidrBlock: '0.0.0.0/0',
+    //   gatewayId: natGateway.ref,
+    // });
 
     /* //Create SNS Topics
     const QCCompletebetaTopic = new sns.Topic(this, 'QCCompletebetaTopic', {
