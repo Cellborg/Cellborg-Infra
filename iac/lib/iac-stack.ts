@@ -342,8 +342,8 @@ export class IacStack extends cdk.Stack {
       cpu: 4096,
       memoryLimitMiB: 12288,
       runtimePlatform: {cpuArchitecture: ecs.CpuArchitecture.X86_64, operatingSystemFamily: ecs.OperatingSystemFamily.LINUX},
-      taskRole: iam.Role.fromRoleArn(this, 'QCTaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole'),
-      executionRole: iam.Role.fromRoleArn(this, 'QCExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole'),
+      taskRole: iam.Role.fromRoleArn(this, 'QCTaskRole', 'arn:aws:iam::536697236385:role/QC_ECSRole'),
+      executionRole: iam.Role.fromRoleArn(this, 'QCExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole'),
     });
     const qc_runner_container = new ecs.ContainerDefinition(this,`cellborg-${env}-qc_pyrunner`,{
       taskDefinition: qcTaskDef,
@@ -401,8 +401,8 @@ export class IacStack extends cdk.Stack {
       cpu: 4096, // adjust cpu allocation
       memoryLimitMiB: 12288, // adjust memory allocation
       runtimePlatform: {cpuArchitecture: ecs.CpuArchitecture.X86_64, operatingSystemFamily: ecs.OperatingSystemFamily.LINUX},
-      taskRole: iam.Role.fromRoleArn(this, 'PATaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole'),//same permissions as qc
-      executionRole: iam.Role.fromRoleArn(this, 'PAExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole'),
+      taskRole: iam.Role.fromRoleArn(this, 'PATaskRole', 'arn:aws:iam::536697236385:role/QC_ECSRole'),//same permissions as qc
+      executionRole: iam.Role.fromRoleArn(this, 'PAExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole'),
     });
 
     const pa_runner_container = new ecs.ContainerDefinition(this,`cellborg-${env}-pa_pyrunner`,{
@@ -462,10 +462,10 @@ export class IacStack extends cdk.Stack {
       cpu: 2048,
       memoryLimitMiB: 8192,
       runtimePlatform: {cpuArchitecture: ecs.CpuArchitecture.X86_64, operatingSystemFamily: ecs.OperatingSystemFamily.LINUX},
-      taskRole: iam.Role.fromRoleArn(this, 'AnalysisTaskRole', 'arn:aws:iam::865984939637:role/QC_ECSRole', {
+      taskRole: iam.Role.fromRoleArn(this, 'AnalysisTaskRole', 'arn:aws:iam::536697236385:role/QC_ECSRole', {
         mutable: false,
       }),
-      executionRole: iam.Role.fromRoleArn(this, 'AnalysisExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole', {
+      executionRole: iam.Role.fromRoleArn(this, 'AnalysisExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
         mutable: false,
       }),
     });
@@ -498,10 +498,10 @@ export class IacStack extends cdk.Stack {
     const apiTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Api_Task`, {
       family: `Cellborg-${env}-Api-Task`,
       networkMode: ecs.NetworkMode.AWS_VPC,
-      taskRole: iam.Role.fromRoleArn(this, 'ApiTaskRole', 'arn:aws:iam::865984939637:role/ECSec2ServiceTaskRole', {
+      taskRole: iam.Role.fromRoleArn(this, 'ApiTaskRole', 'arn:aws:iam::536697236385:role/ECSec2ServiceTaskRole', {
         mutable: false,
       }),
-      executionRole: iam.Role.fromRoleArn(this, 'ApiExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole', {
+      executionRole: iam.Role.fromRoleArn(this, 'ApiExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
         mutable: false,
       }),
     });
@@ -529,10 +529,10 @@ export class IacStack extends cdk.Stack {
     const frontendTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Frontend_Task`, {
       family: `Cellborg-${env}-Frontend-Task`,
       networkMode: ecs.NetworkMode.AWS_VPC,
-      taskRole: iam.Role.fromRoleArn(this, 'FrontendTaskRole', 'arn:aws:iam::865984939637:role/ECSec2ServiceTaskRole', {
+      taskRole: iam.Role.fromRoleArn(this, 'FrontendTaskRole', 'arn:aws:iam::536697236385:role/ECSec2ServiceTaskRole', {
         mutable: false,
       }),
-      executionRole: iam.Role.fromRoleArn(this, 'FrontendExecRole', 'arn:aws:iam::865984939637:role/ecsTaskExecutionRole', {
+      executionRole: iam.Role.fromRoleArn(this, 'FrontendExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
         mutable: false,
       }),
     });
