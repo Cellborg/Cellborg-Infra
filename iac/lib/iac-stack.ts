@@ -52,8 +52,8 @@ export class IacStack extends cdk.Stack {
     ];
 
     for (const bucketName of bucketNames) {
-      new s3.Bucket(this, `Cellborg-${env}-${bucketName}-Bucket`, {
-        bucketName: `cellborg-${env}-${bucketName}-bucket`,
+      new s3.Bucket(this, `Cellborg-${env}-${bucketName}`, {
+        bucketName: `cellborg-${env}-${bucketName}`,
         versioned: true,
         removalPolicy: cdk.RemovalPolicy.DESTROY,  // remove the buckets when stack is deleted
         cors: [
