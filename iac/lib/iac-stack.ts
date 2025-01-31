@@ -295,8 +295,8 @@ export class IacStack extends cdk.Stack {
       targetCapacityPercent: 80
     });
 
-    frontendCluster.addAsgCapacityProvider(apiCapacityProvider);
-    apiCluster.addAsgCapacityProvider(frontendCapacityProvider);
+    frontendCluster.addAsgCapacityProvider(frontendCapacityProvider);
+    apiCluster.addAsgCapacityProvider(apiCapacityProvider);
     
     analysisCluster.addDefaultCapacityProviderStrategy([
       {
