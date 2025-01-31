@@ -71,8 +71,8 @@
       },
       "beta":{
         "vpc_cidr": "53.15.0.0/20",
-        "frontend_cert_arn": "arn:aws:acm:us-west-2:865984939637:certificate/ed8494da-9f35-44e1-b5ec-e9c3d000bd0a",
-        "api_cert_arn": "arn:aws:acm:us-west-2:865984939637:certificate/ce66b485-650b-4004-aa6f-1107387ac31d",
+        "frontend_cert_arn": "arn:aws:acm:us-west-2:536697236385:certificate/ed8494da-9f35-44e1-b5ec-e9c3d000bd0a",
+        "api_cert_arn": "arn:aws:acm:us-west-2:536697236385:certificate/ce66b485-650b-4004-aa6f-1107387ac31d",
         "frontendURL": "https://beta.cellborg.bio",
         "apiURL": "https://beta.api.cellborg.bio",
         "AWS_ACCESS_KEY_ID": "AKIAXZ5NF5OQXQOSBUG3",
