@@ -7,5 +7,5 @@ const env = app.node.tryGetContext('environment') || 'beta';
 
 new IacStack(app, 'IacStack', {
   stackName: `Cellborg-${env}-stack`,
-  env: { account: '865984939637', region: 'us-west-2' },
+  env: { account: '536697236385', region: 'us-east-1' },
 });
