@@ -9,6 +9,11 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
+
 export class IacStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -111,7 +116,24 @@ export class IacStack extends cdk.Stack {
       destinationCidrBlock: '0.0.0.0/0',
       instanceId: natInstance.instanceId, // Direct traffic to the NAT Instance
     });
-    
+
+    //Create SNS Topics
+    const QCCompletebetaTopic = new sns.Topic(this, 'QCCompletebetaTopic', {
+      displayName: 'QCComplete-beta-Topic',
+    });
+
+    const PACompletebetaTopic = new sns.Topic(this, 'Topic', {
+      displayName: 'PAComplete-beta-Topic',
+    });
+
+    const TaskRunningTopic = new sns.Topic(this, 'Topic', {
+      displayName: 'Task-beta-Topic'
+    })
+
+    //subscribe topics to endpoints
+    QCCompletebetaTopic.addSubscription(new subs.UrlSubscription('https://beta.api.cellborg.bio/api/sns'));
+    PACompletebetaTopic.addSubscription(new subs.UrlSubscription('https://beta.api.cellborg.bio/api/sns_pa'));
+    TaskRunningTopic.addSubscription(new subs.UrlSubscription('https://beta.api.cellborg.bio/api/sns_running'));
     
     
     const qcLogGroup = new logs.LogGroup(this, `Cellborg-${env}-QCLogGroup`, {
@@ -193,6 +215,38 @@ export class IacStack extends cdk.Stack {
       clusterName: `Cellborg-${env}-Analysis-Cluster`
     });
 
+    // EVENTBRIDGE RULES
+
+    const qcRunningRule = new events.Rule(this, 'QCTaskIsRunning', {
+      ruleName: 'QCTaskIsRunning',
+      description: 'sends sns message when qc beta task is running',
+      eventPattern: {
+        source: ['aws.ecs'],
+        detailType: ['ECS Task State Change'],
+        detail: {
+          lastStatus: ['RUNNING'],
+          clusterArn: [qcCluster.clusterArn] //dynamically use cluster ARN
+        }
+      }
+    })
+
+    const paRunningRule = new events.Rule(this, 'PATasksRunningRule', {
+      ruleName: 'PATaskIsRunning',
+      description: 'Sends an SNS message when a PA task state changes to RUNNING',
+      eventPattern: {
+        source: ['aws.ecs'],
+        detailType: ['ECS Task State Change'],
+        detail: {
+          lastStatus: ['RUNNING'],
+          clusterArn: [paCluster.clusterArn], // Dynamically use the cluster ARN
+        },
+      },
+    });
+
+    qcRunningRule.addTarget(new targets.SnsTopic(TaskRunningTopic));
+    paRunningRule.addTarget(new targets.SnsTopic(TaskRunningTopic));
+
+    // AUTOSCALING GROUPS
     const apiAutoScalingGroup  = new autoscaling.AutoScalingGroup(this, 'ApiASG', {
       vpc,
       minCapacity: autoScaleProps.minCapacity,  
