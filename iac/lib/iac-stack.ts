@@ -35,6 +35,14 @@ export class IacStack extends cdk.Stack {
     const apicertificate =Certificate.fromCertificateArn(this, 'apiCert', apiCertificateArn)
     
 
+    //Create Roles
+    const ecsExecutionRole = new iam.Role(this, 'EcsExecutionRole', {
+      roleName: 'ecsTaskExecutionRole',
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com')
+    });
+    ecsExecutionRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')
+    );
 
 
     // STEP 0: S3 buckets
