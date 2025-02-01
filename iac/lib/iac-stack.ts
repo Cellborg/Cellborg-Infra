@@ -532,7 +532,7 @@ export class IacStack extends cdk.Stack {
       networkMode: ecs.NetworkMode.AWS_VPC,
       taskRole: iam.Role.fromRoleArn(this, 'ApiTaskRole', 'arn:aws:iam::536697236385:role/ECSec2ServiceTaskRole', {
         mutable: false,
-      }),
+      }), 
       executionRole: iam.Role.fromRoleArn(this, 'ApiExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
         mutable: false,
       }),
