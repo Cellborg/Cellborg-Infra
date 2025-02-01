@@ -332,15 +332,38 @@ export class IacStack extends cdk.Stack {
 
     // STEP 3: Task Definitions
 
-    // ECR Repositories (assuming they are already created)
-    const apiRepo = ecr.Repository.fromRepositoryName(this, 'ApiRepo', `cellborg-${env}-api`);
-    const frontendRepo = ecr.Repository.fromRepositoryName(this, 'FrontendRepo', `cellborg-${env}-frontend`);
-    const qcPyRunnerRepo = ecr.Repository.fromRepositoryName(this, 'QcPyRunnerRepo', `cellborg-${env}-qc_pyrunner`);
-    const qcPyRepo = ecr.Repository.fromRepositoryName(this, 'QcPyRepo', `cellborg-${env}-qc_py`);
-    const paPyRepo = ecr.Repository.fromRepositoryName(this, 'PaPyRepo', `cellborg-${env}-pa_py`);//change to name of ecr repo (need to create)
-    const paPyRunnerRepo = ecr.Repository.fromRepositoryName(this, 'PaPyRunnerRepo',`cellborg-${env}-pa_pyrunner`);//change to name of ecr repo (need to create)
-    const analysisRRepo = ecr.Repository.fromRepositoryName(this, 'AnalysisRRepo', `cellborg-${env}-analysis_r`);
-    const analysisPyRepo = ecr.Repository.fromRepositoryName(this, 'AnalysisPyRepo', `cellborg-${env}-analysis_py`);
+    // ECR Repositories
+    const apiRepo = new ecr.Repository(this, 'ApiRepo', {
+      repositoryName: `cellborg-${env}-api`,
+    });
+
+    const frontendRepo = new ecr.Repository(this, 'FrontendRepo', {
+      repositoryName: `cellborg-${env}-frontend`,
+    });
+
+    const qcPyRunnerRepo = new ecr.Repository(this, 'QcPyRunnerRepo', {
+      repositoryName: `cellborg-${env}-qc_pyrunner`,
+    });
+
+    const qcPyRepo = new ecr.Repository(this, 'QcPyRepo', {
+      repositoryName: `cellborg-${env}-qc_py`,
+    });
+
+    const paPyRepo = new ecr.Repository(this, 'PaPyRepo', {
+      repositoryName: `cellborg-${env}-pa_py`,
+    });
+
+    const paPyRunnerRepo = new ecr.Repository(this, 'PaPyRunnerRepo', {
+      repositoryName: `cellborg-${env}-pa_pyrunner`,
+    });
+
+    const analysisRRepo = new ecr.Repository(this, 'AnalysisRRepo', {
+      repositoryName: `cellborg-${env}-analysis_r`,
+    });
+
+    const analysisPyRepo = new ecr.Repository(this, 'AnalysisPyRepo', {
+      repositoryName: `cellborg-${env}-analysis_py`,
+    });
 
     // Task Definitions
     
