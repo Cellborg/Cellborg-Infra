@@ -527,66 +527,32 @@ export class IacStack extends cdk.Stack {
       name: `cellborg-${env}-analysis_r-8001-tcp`
     });
     
-    const apiTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Api_Task`, {
-      family: `Cellborg-${env}-Api-Task`,
-      networkMode: ecs.NetworkMode.AWS_VPC,
-      taskRole: iam.Role.fromRoleArn(this, 'ApiTaskRole', 'arn:aws:iam::536697236385:role/ECSec2ServiceTaskRole', {
-        mutable: false,
-      }),
-      executionRole: iam.Role.fromRoleArn(this, 'ApiExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
-        mutable: false,
-      }),
-    });
-    const apiContainer = apiTaskDef.addContainer(`cellborg-${env}-api`, {
-      image: ecs.ContainerImage.fromEcrRepository(apiRepo, 'latest'),
-      memoryLimitMiB: 674,
-      cpu: 896,
-      environment: {
-        NODE_ENV: env,
-        MONGO_CONNECTION_STRING: "mongodb+srv://nishun2005:ktVWftg1tJdMEKZc@users.xtuucul.mongodb.net/?retryWrites=true&w=majority",
-        JWT_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A="
-      },
-      logging: ecs.LogDrivers.awsLogs({
-        logGroup: apiLogGroup,
-        streamPrefix: 'ecs',
-      })
-    });
-    apiContainer.addPortMappings({
-      containerPort: 443,
-      protocol: ecs.Protocol.TCP,
-      appProtocol: ecs.AppProtocol.http,
-      name: 'http'
+    const apiTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-API-Task`, {
+      family: `Cellborg-${env}-API-Task`,
     });
 
-    const frontendTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Frontend_Task`, {
+    apiTaskDef.addContainer('ApiContainer', {
+      image: ecs.ContainerImage.fromRegistry('amazon/amazon-ecs-sample'),
+      memoryLimitMiB: 512,
+      cpu: 256,
+      essential: true,
+      logging: new ecs.AwsLogDriver({
+        streamPrefix: 'api',
+      }),
+    });
+
+    const frontendTaskDef = new ecs.FargateTaskDefinition(this, `Cellborg-${env}-Frontend-Task`, {
       family: `Cellborg-${env}-Frontend-Task`,
-      networkMode: ecs.NetworkMode.AWS_VPC,
-      taskRole: iam.Role.fromRoleArn(this, 'FrontendTaskRole', 'arn:aws:iam::536697236385:role/ECSec2ServiceTaskRole', {
-        mutable: false,
-      }),
-      executionRole: iam.Role.fromRoleArn(this, 'FrontendExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
-        mutable: false,
-      }),
     });
-    const frontendContainer = frontendTaskDef.addContainer(`cellborg-${env}-frontend`, {
-      image: ecs.ContainerImage.fromEcrRepository(frontendRepo, 'newest'),
-      memoryLimitMiB: 674,
-      cpu: 896,
-      environment: {
-        NEXT_PUBLIC_DEPLOY_ENV: env,
-        NEXTAUTH_SECRET: "gBsuHo9HV6D4zrF+HtLBQ1C8n9W7h37W5beOuDXBw0A=",
-        NEXTAUTH_URL: frontendURL
-      },
-      logging: ecs.LogDrivers.awsLogs({
-        logGroup: frontendLogGroup,
-        streamPrefix: 'ecs',
-      })
-    });
-    frontendContainer.addPortMappings({
-      containerPort: 3000,
-      protocol: ecs.Protocol.TCP,
-      appProtocol: ecs.AppProtocol.http,
-      name: 'http'
+
+    frontendTaskDef.addContainer('FrontendContainer', {
+      image: ecs.ContainerImage.fromRegistry('amazon/amazon-ecs-sample'),
+      memoryLimitMiB: 512,
+      cpu: 256,
+      essential: true,
+      logging: new ecs.AwsLogDriver({
+        streamPrefix: 'frontend',
+      }),
     });
 
     // STEP 4: EC2 Services & Fargate Tasks
