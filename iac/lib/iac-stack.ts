@@ -44,6 +44,22 @@ export class IacStack extends cdk.Stack {
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')
     );
 
+    const frontendTaskRole = new iam.Role(this, 'FrontendTaskRole', {
+      roleName: 'Cellborg-FrontendTaskRole',
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+    });
+    frontendTaskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')
+    );
+
+    const apiTaskRole = new iam.Role(this, 'ApiTaskRole', {
+      roleName: 'Cellborg-ApiTaskRole',
+      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+    });
+    apiTaskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')
+    );
+
 
     // STEP 0: S3 buckets
 
@@ -507,9 +523,7 @@ export class IacStack extends cdk.Stack {
     const apiTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Api_Task`, {
       family: `Cellborg-${env}-Api-Task`,
       networkMode: ecs.NetworkMode.AWS_VPC,
-      taskRole: iam.Role.fromRoleArn(this, 'ApiTaskRole', 'arn:aws:iam::536697236385:role/ECSec2ServiceTaskRole', {
-        mutable: false,
-      }),
+      taskRole: apiTaskRole,
       executionRole: iam.Role.fromRoleArn(this, 'ApiExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
         mutable: false,
       }),
@@ -538,9 +552,7 @@ export class IacStack extends cdk.Stack {
     const frontendTaskDef = new ecs.Ec2TaskDefinition(this, `Cellborg-${env}-Frontend_Task`, {
       family: `Cellborg-${env}-Frontend-Task`,
       networkMode: ecs.NetworkMode.AWS_VPC,
-      taskRole: iam.Role.fromRoleArn(this, 'FrontendTaskRole', 'arn:aws:iam::536697236385:role/ECSec2ServiceTaskRole', {
-        mutable: false,
-      }),
+      taskRole: frontendTaskRole,
       executionRole: iam.Role.fromRoleArn(this, 'FrontendExecRole', 'arn:aws:iam::536697236385:role/ecsTaskExecutionRole', {
         mutable: false,
       }),
