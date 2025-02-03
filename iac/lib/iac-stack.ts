@@ -116,7 +116,7 @@ export class IacStack extends cdk.Stack {
         }
       ],
     });
-
+ 
     // IAM Role for EC2 instances
     const ecsInstanceRole = new iam.Role(this, 'EcsInstanceRole', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
