@@ -81,9 +81,9 @@
       "autoscale_props":{
         "minCapacity": 1,  
         "desiredCapacity": 1,  
-        "maxCapacity": 1, 
+        "maxCapacity": 2, 
         "instanceType": "t2.small",
-        "spotPrice": "0.0068"
+        "spotPrice": "0.01"
       }
 
     }
