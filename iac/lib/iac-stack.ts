@@ -117,6 +117,14 @@ export class IacStack extends cdk.Stack {
       ],
     });
 
+    // IAM Role for EC2 instances
+    const ecsInstanceRole = new iam.Role(this, 'EcsInstanceRole', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+    });
+    ecsInstanceRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonEC2ContainerServiceforEC2Role')
+    );
+
     // set up nat instance and route table
     const natInstance = new ec2.Instance(this, `NATInstance-${env}`, {
       vpc,
@@ -124,8 +132,21 @@ export class IacStack extends cdk.Stack {
       machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
       vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
       //keyName: 'your-key-pair', Ensure you have an appropriate key pair configured
+      role: ecsInstanceRole,
+      userData: ec2.UserData.forLinux({
+        shebang: '#!/bin/bash',
+      }),
     });
-    
+
+    natInstance.addUserData(
+      'echo ECS_CLUSTER=${cluster.clusterName} >> /etc/ecs/ecs.config',
+      'yum install -y aws-cfn-bootstrap',
+      '/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource NATInstance --region ${AWS::Region}',
+      'yum install -y ecs-init',
+      'service docker start',
+      'start ecs'
+    );
+
     // Enable IP forwarding on the NAT instance
     natInstance.addUserData(
       'sysctl -w net.ipv4.ip_forward=1',
