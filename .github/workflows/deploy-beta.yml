@@ -1,8 +1,9 @@
 name: Deploy Beta Cellborg Infrastructure
 on:
-  push:
-    branches:
-      - beta
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - beta
 jobs:
   deploy-beta:
     runs-on: ubuntu-latest
