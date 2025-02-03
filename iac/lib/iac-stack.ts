@@ -307,7 +307,8 @@ export class IacStack extends cdk.Stack {
       spotPrice: autoScaleProps.spotPrice,  // max spot price
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.seconds(60) }),
       autoScalingGroupName: 'ApiASG',
-      securityGroup: apiSecGroup
+      securityGroup: apiSecGroup,
+      role:ecsInstanceRole
     });
     const frontendAutoScalingGroup  = new autoscaling.AutoScalingGroup(this, 'FrontendASG', {
       vpc,
@@ -319,7 +320,8 @@ export class IacStack extends cdk.Stack {
       spotPrice: autoScaleProps.spotPrice,  // max spot price
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.seconds(60) }),
       autoScalingGroupName: 'FrontendASG',
-      securityGroup: frontendSecGroup
+      securityGroup: frontendSecGroup,
+      role:ecsInstanceRole
     });
 
     const apiCapacityProvider = new ecs.AsgCapacityProvider(this, 'ApiAsgCapacityProvider', {
