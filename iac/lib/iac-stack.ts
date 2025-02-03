@@ -102,6 +102,7 @@ export class IacStack extends cdk.Stack {
     const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, {
       maxAzs: 3,
       cidr: vpcCIDR,
+      natGateways: 0,
       subnetConfiguration: [
         {
           cidrMask: 24,
