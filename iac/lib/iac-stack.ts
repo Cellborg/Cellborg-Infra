@@ -123,7 +123,7 @@ export class IacStack extends cdk.Stack {
     });
     ecsInstanceRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonEC2ContainerServiceforEC2Role')
-    );
+    ); 
 
     // set up nat instance and route table
     const natInstance = new ec2.Instance(this, `NATInstance-${env}`, {

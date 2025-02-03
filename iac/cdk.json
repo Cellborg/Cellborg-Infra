@@ -82,8 +82,8 @@
         "minCapacity": 1,  
         "desiredCapacity": 1,  
         "maxCapacity": 1, 
-        "instanceType": "t2.micro",
-        "spotPrice": "0.004"
+        "instanceType": "t2.small",
+        "spotPrice": "0.0068"
       }
 
     }
