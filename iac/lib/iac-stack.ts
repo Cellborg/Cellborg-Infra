@@ -102,7 +102,7 @@ export class IacStack extends cdk.Stack {
     const vpc = new ec2.Vpc(this, `Cellborg-${env}-VPC`, {
       maxAzs: 3,
       cidr: vpcCIDR,
-      natGateways: 0,
+      natGateways: 1,
       subnetConfiguration: [
         {
           cidrMask: 24,
@@ -116,17 +116,17 @@ export class IacStack extends cdk.Stack {
         }
       ],
     });
- 
+
     // IAM Role for EC2 instances
     const ecsInstanceRole = new iam.Role(this, 'EcsInstanceRole', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
     });
     ecsInstanceRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonEC2ContainerServiceforEC2Role')
-    ); 
+    );
 
     // set up nat instance and route table
-    const natInstance = new ec2.Instance(this, `NATInstance-${env}`, {
+    /* const natInstance = new ec2.Instance(this, `NATInstance-${env}`, {
       vpc,
       instanceType: new ec2.InstanceType('t2.micro'), // Adjust instance type as needed
       machineImage: ecs.EcsOptimizedImage.amazonLinux2023(),
@@ -136,29 +136,29 @@ export class IacStack extends cdk.Stack {
       userData: ec2.UserData.forLinux({
         shebang: '#!/bin/bash',
       }),
-    });
+    }); */
 
-    natInstance.addUserData(
+    /* natInstance.addUserData(
       'echo ECS_CLUSTER=${cluster.clusterName} >> /etc/ecs/ecs.config',
       'yum install -y aws-cfn-bootstrap',
       '/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource NATInstance --region ${AWS::Region}',
       'yum install -y ecs-init',
       'service docker start',
       'start ecs'
-    );
+    ); */
 
     // Enable IP forwarding on the NAT instance
-    natInstance.addUserData(
+    /* natInstance.addUserData(
       'sysctl -w net.ipv4.ip_forward=1',
       'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE'
-    );
+    ); */
     
     // Assign an Elastic IP to the NAT instance
-    const elasticIp = new ec2.CfnEIP(this, `NATEIP-${env}`);
+   /*  const elasticIp = new ec2.CfnEIP(this, `NATEIP-${env}`);
     new ec2.CfnEIPAssociation(this, `NATEIPAssoc-${env}`, {
       eip: elasticIp.ref,
       instanceId: natInstance.instanceId,
-    });
+    }); */
 
     // Remove or comment out the route creation if 0.0.0.0/0 is already set:
     // new ec2.CfnRoute(this, 'PrivateRoute', {
