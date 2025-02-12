@@ -167,7 +167,7 @@ export class IacStack extends cdk.Stack {
     //   gatewayId: natGateway.ref,
     // });
 
-    /* //Create SNS Topics
+     //Create SNS Topics
     const QCCompletebetaTopic = new sns.Topic(this, 'QCCompletebetaTopic', {
       displayName: 'QCComplete-beta-Topic',
     });
@@ -183,7 +183,7 @@ export class IacStack extends cdk.Stack {
     //subscribe topics to endpoints
     QCCompletebetaTopic.addSubscription(new subs.UrlSubscription('https://beta.api.cellborg.bio/api/sns'));
     PACompletebetaTopic.addSubscription(new subs.UrlSubscription('https://beta.api.cellborg.bio/api/sns_pa'));
-    TaskRunningTopic.addSubscription(new subs.UrlSubscription('https://beta.api.cellborg.bio/api/sns_running')); */
+    TaskRunningTopic.addSubscription(new subs.UrlSubscription('https://beta.api.cellborg.bio/api/sns_running'));
     
     
     const qcLogGroup = new logs.LogGroup(this, `Cellborg-${env}-QCLogGroup`, {
@@ -267,7 +267,7 @@ export class IacStack extends cdk.Stack {
 
     // EVENTBRIDGE RULES
 
-    /* const qcRunningRule = new events.Rule(this, 'QCTaskIsRunning', {
+    const qcRunningRule = new events.Rule(this, 'QCTaskIsRunning', {
       ruleName: 'QCTaskIsRunning',
       description: 'sends sns message when qc beta task is running',
       eventPattern: {
@@ -294,7 +294,7 @@ export class IacStack extends cdk.Stack {
     });
 
     qcRunningRule.addTarget(new targets.SnsTopic(TaskRunningTopic));
-    paRunningRule.addTarget(new targets.SnsTopic(TaskRunningTopic)); */
+    paRunningRule.addTarget(new targets.SnsTopic(TaskRunningTopic)); 
 
     // AUTOSCALING GROUPS
     const apiAutoScalingGroup  = new autoscaling.AutoScalingGroup(this, 'ApiASG', {
