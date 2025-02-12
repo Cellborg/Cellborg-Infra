@@ -172,11 +172,11 @@ export class IacStack extends cdk.Stack {
       displayName: 'QCComplete-beta-Topic',
     });
 
-    const PACompletebetaTopic = new sns.Topic(this, 'Topic', {
+    const PACompletebetaTopic = new sns.Topic(this, 'PACompletebetaTopic', {
       displayName: 'PAComplete-beta-Topic',
     });
 
-    const TaskRunningTopic = new sns.Topic(this, 'Topic', {
+    const TaskRunningTopic = new sns.Topic(this, 'TaskRunningTopic', {
       displayName: 'Task-beta-Topic'
     })
 
