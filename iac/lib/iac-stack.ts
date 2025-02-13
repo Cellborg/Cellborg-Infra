@@ -137,9 +137,9 @@ export class IacStack extends cdk.Stack {
     });
 
     // Allow inbound HTTP (port 80) and HTTPS (port 443) from ComputeSubnet1, ComputeSubnet2, and ComputeSubnet3
-    const computeSubnet1 = vpc.selectSubnets({ subnetGroupName: 'ComputeSubnet1' }).subnets[0];
-    const computeSubnet2 = vpc.selectSubnets({ subnetGroupName: 'ComputeSubnet2' }).subnets[0];
-    const computeSubnet3 = vpc.selectSubnets({ subnetGroupName: 'ComputeSubnet3' }).subnets[0];
+    const computeSubnet1 = vpc.selectSubnets({ subnetGroupName: 'IacStack/Cellborg-beta-VPC/ComputeSubnet1' }).subnets[0];
+    const computeSubnet2 = vpc.selectSubnets({ subnetGroupName: 'IacStack/Cellborg-beta-VPC/ComputeSubnet2' }).subnets[0];
+    const computeSubnet3 = vpc.selectSubnets({ subnetGroupName: 'IacStack/Cellborg-beta-VPC/ComputeSubnet3' }).subnets[0];
 
     natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet1.ipv4CidrBlock), ec2.Port.tcp(80), 'Allow HTTP from ComputeSubnet1');
     natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet1.ipv4CidrBlock), ec2.Port.tcp(443), 'Allow HTTPS from ComputeSubnet1');
