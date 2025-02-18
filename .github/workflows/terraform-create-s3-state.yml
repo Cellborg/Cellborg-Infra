@@ -1,4 +1,4 @@
-name: Create terraform state S3 Bucket
+name: Create S3 Bucket
 
 on:
   workflow_dispatch:
@@ -25,5 +25,9 @@ jobs:
 
       - name: Create S3 Bucket
         run: |
-          aws s3api create-bucket --bucket ${{ env.S3_BUCKET }} --region ${{ env.AWS_REGION }} --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
+          if [ "${{ env.AWS_REGION }}" = "us-east-1" ]; then
+            aws s3api create-bucket --bucket ${{ env.S3_BUCKET }} --region ${{ env.AWS_REGION }}
+          else
+            aws s3api create-bucket --bucket ${{ env.S3_BUCKET }} --region ${{ env.AWS_REGION }} --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
+          fi
           aws s3api put-bucket-versioning --bucket ${{ env.S3_BUCKET }} --versioning-configuration Status=Enabled
