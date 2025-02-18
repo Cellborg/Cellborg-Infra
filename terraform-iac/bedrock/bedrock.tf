@@ -48,6 +48,44 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
+# Security Groups
+resource "aws_security_group" "nat" {
+  vpc_id = aws_vpc.cellborg_vpc.id
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = [aws_subnet.private.cidr_block]
+  }
+  ingress {
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = [aws_subnet.private.cidr_block]
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "nat-sg"
+  }
+}
+
 # NAT Instance
 resource "aws_instance" "nat" {
   ami = "ami-0787627ca252e3c43" # Custom ami created manually.
@@ -128,43 +166,7 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-# Security Groups
-resource "aws_security_group" "nat" {
-  vpc_id = aws_vpc.cellborg_vpc.id
-  ingress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
-    cidr_blocks = [aws_subnet.private.cidr_block]
-  }
-  ingress {
-    from_port = 443
-    to_port = 443
-    protocol = "tcp"
-    cidr_blocks = [aws_subnet.private.cidr_block]
-  }
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    from_port = 443
-    to_port = 443
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = {
-    Name = "nat-sg"
-  }
-}
+
 
 resource "aws_security_group" "private" {
   vpc_id = aws_vpc.cellborg_vpc.id
