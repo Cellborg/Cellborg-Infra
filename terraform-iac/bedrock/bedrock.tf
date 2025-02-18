@@ -17,7 +17,7 @@ resource "aws_vpc" "cellborg_vpc" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name = "Cellborg-VPC"
+    Name = "Cellborg"
   }
 }
 
