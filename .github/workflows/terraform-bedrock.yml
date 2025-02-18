@@ -49,7 +49,7 @@ jobs:
       run:
         working-directory: namespaces
     steps:
-      - uses: trstringer/manual-approval@v1
+      - uses: seshun/manual-approval@v1
       with:
         secret: ${{ github.TOKEN }}
         approvers: CellborgApprovers
