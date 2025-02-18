@@ -100,7 +100,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.cellborg_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
-    network_interface_id = data.aws_network_interface.nat.id
+    network_interface_id = data.aws_network_interfaces.nat.ids[0]
   }
   route {
     cidr_block = aws_vpc.cellborg_vpc.cidr_block
