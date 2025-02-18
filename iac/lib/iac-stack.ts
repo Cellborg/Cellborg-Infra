@@ -14,7 +14,6 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 
-
 export class IacStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -125,31 +124,6 @@ export class IacStack extends cdk.Stack {
     ecsInstanceRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonEC2ContainerServiceforEC2Role')
     );
-
-    // create security group for the NAT instance
-
-    // Create the security group
-    const natInstanceSg = new ec2.SecurityGroup(this, 'NatInstanceSG', {
-      vpc,
-      securityGroupName: 'nat-instance-sg-001',
-      description: 'Security group for NAT instance',
-      allowAllOutbound: true,
-    });
-
-    // Allow inbound HTTP (port 80) and HTTPS (port 443) from ComputeSubnet1, ComputeSubnet2, and ComputeSubnet3
-    const computeSubnet1 = vpc.selectSubnets({ subnetGroupName: 'IacStack/Cellborg-beta-VPC/ComputeSubnet1' }).subnets[0];
-    const computeSubnet2 = vpc.selectSubnets({ subnetGroupName: 'IacStack/Cellborg-beta-VPC/ComputeSubnet2' }).subnets[0];
-    const computeSubnet3 = vpc.selectSubnets({ subnetGroupName: 'IacStack/Cellborg-beta-VPC/ComputeSubnet3' }).subnets[0];
-
-    natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet1.ipv4CidrBlock), ec2.Port.tcp(80), 'Allow HTTP from ComputeSubnet1');
-    natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet1.ipv4CidrBlock), ec2.Port.tcp(443), 'Allow HTTPS from ComputeSubnet1');
-    natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet2.ipv4CidrBlock), ec2.Port.tcp(80), 'Allow HTTP from ComputeSubnet2');
-    natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet2.ipv4CidrBlock), ec2.Port.tcp(443), 'Allow HTTPS from ComputeSubnet2');
-    natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet3.ipv4CidrBlock), ec2.Port.tcp(80), 'Allow HTTP from ComputeSubnet3');
-    natInstanceSg.addIngressRule(ec2.Peer.ipv4(computeSubnet3.ipv4CidrBlock), ec2.Port.tcp(443), 'Allow HTTPS from ComputeSubnet3');
-
-    // Allow SSH (port 22) from anywhere
-    natInstanceSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH from anywhere');
 
     // set up nat instance and route table
     /* const natInstance = new ec2.Instance(this, `NATInstance-${env}`, {
