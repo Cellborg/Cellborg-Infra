@@ -78,10 +78,12 @@ resource "aws_eip" "nat" {
 }
 
 # Data block to get the network interface ID of the NAT instance
-data "aws_network_interface" "nat" {
-  instance_id = aws_instance.nat.id
+data "aws_network_interfaces" "nat" {
+  filter {
+    name   = "attachment.instance-id"
+    values = [aws_instance.nat.id]
+  }
 }
-
 # Route Tables
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.cellborg_vpc.id
