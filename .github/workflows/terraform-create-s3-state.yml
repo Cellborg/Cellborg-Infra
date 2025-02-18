@@ -1,0 +1,29 @@
+name: Create terraform state S3 Bucket
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-s3-bucket:
+    name: 'Create S3 Bucket'
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      S3_BUCKET: cellborg-tf-state
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create S3 Bucket
+        run: |
+          aws s3api create-bucket --bucket ${{ env.S3_BUCKET }} --region ${{ env.AWS_REGION }} --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
+          aws s3api put-bucket-versioning --bucket ${{ env.S3_BUCKET }} --versioning-configuration Status=Enabled
