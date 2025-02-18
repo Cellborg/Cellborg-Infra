@@ -47,13 +47,13 @@ jobs:
     needs: [Terraform_Plan]
     defaults:
       run:
-        working-directory: namespaces
+        working-directory: terraform-iac/bedrock
     steps:
-      - uses: seshun/manual-approval@v1
-      with:
-        secret: ${{ github.TOKEN }}
-        approvers: CellborgApprovers
-        minimum-approvals: 1
+      - uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: CellborgApprovers
+          minimum-approvals: 1
   apply:
     name: 'Terraform Apply'
     runs-on: ubuntu-latest
