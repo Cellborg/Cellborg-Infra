@@ -1,5 +1,4 @@
-name: Terraform PA Workflow
-
+name: Terraform PA
 on:
   workflow_dispatch:
 

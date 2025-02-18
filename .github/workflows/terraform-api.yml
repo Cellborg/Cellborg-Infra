@@ -1,4 +1,4 @@
-name: Terraform API Workflow
+name: Terraform API
 
 on:
   workflow_dispatch:

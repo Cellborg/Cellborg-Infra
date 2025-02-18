@@ -1,4 +1,4 @@
-name: Terraform Bedrock
+name: Terraform Analysis
 on:
   workflow_dispatch:
 
@@ -11,7 +11,7 @@ jobs:
       TF_VERSION: 1.0.0
       AWS_REGION: us-east-1
       S3_BUCKET: cellborg-tf-state
-      S3_KEY: bedrock.tfstate
+      S3_KEY: analysis.tfstate
 
     steps:
       - name: Checkout code
@@ -24,17 +24,17 @@ jobs:
 
       - name: Terraform Init
         run: terraform init -backend-config="bucket=${{ env.S3_BUCKET }}" -backend-config="key=${{ env.S3_KEY }}" -backend-config="region=${{ env.AWS_REGION }}"
-        working-directory: terraform-iac/bedrock
+        working-directory: terraform-iac/analysis
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
-        working-directory: terraform-iac/bedrock
+        working-directory: terraform-iac/analysis
 
       - name: Save Plan
         uses: actions/upload-artifact@v2
         with:
           name: tfplan
-          path: terraform-iac/bedrock/tfplan
+          path: terraform-iac/analysis/tfplan
 
   apply:
     name: 'Terraform Apply'
@@ -45,7 +45,7 @@ jobs:
       TF_VERSION: 1.0.0
       AWS_REGION: us-east-1
       S3_BUCKET: cellborg-tf-state
-      S3_KEY: bedrock.tfstate
+      S3_KEY: analysis.tfstate
 
     steps:
       - name: Checkout code
@@ -60,8 +60,8 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: tfplan
-          path: terraform-iac/bedrock
+          path: terraform-iac/analysis
 
       - name: Terraform Apply
         run: terraform apply tfplan
-        working-directory: terraform-iac/bedrock
+        working-directory: terraform-iac/analysis

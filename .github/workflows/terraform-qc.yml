@@ -1,4 +1,4 @@
-name: Terraform QC Workflow
+name: Terraform QC
 
 on:
   workflow_dispatch:

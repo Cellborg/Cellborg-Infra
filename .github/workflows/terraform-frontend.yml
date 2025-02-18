@@ -1,4 +1,4 @@
-name: Terraform Frontend Workflow
+name: Terraform Frontend
 
 on:
   workflow_dispatch:
