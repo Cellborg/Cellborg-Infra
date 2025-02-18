@@ -51,7 +51,7 @@ resource "aws_internet_gateway" "main" {
 # NAT Instance
 resource "aws_instance" "nat" {
   ami = "ami-0787627ca252e3c43" # Custom ami created manually.
-  instance_type = "t2.nano"
+  instance_type = "t2.micro"
   subnet_id = aws_subnet.public.id
   associate_public_ip_address = true
   source_dest_check = false
