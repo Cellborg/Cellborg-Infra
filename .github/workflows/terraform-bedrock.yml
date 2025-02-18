@@ -34,7 +34,7 @@ jobs:
         working-directory: terraform-iac/bedrock
 
       - name: Terraform Plan
-        run: terraform plan -input=false -var-file=terraform-iac/bedrock/beta.tfvars -out=tfplan
+        run: terraform plan -input=false -var-file=beta.tfvars -out=tfplan
         working-directory: terraform-iac/bedrock
 
       - name: Save Plan
