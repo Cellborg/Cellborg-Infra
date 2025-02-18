@@ -73,6 +73,8 @@ resource "aws_instance" "nat" {
   instance_market_options {
     market_type = "spot"
   }
+
+  depends_on = [aws_security_group.nat]
 }
 
 # Elastic IP for NAT Instance
@@ -130,14 +132,32 @@ resource "aws_route_table_association" "private" {
 resource "aws_security_group" "nat" {
   vpc_id = aws_vpc.cellborg_vpc.id
   ingress {
-    from_port = 0
-    to_port = 65535
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = [aws_subnet.private.cidr_block]
+  }
+  ingress {
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = [aws_subnet.private.cidr_block]
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port = 80
+    to_port = 80
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   egress {
-    from_port = 0
-    to_port = 65535
+    from_port = 443
+    to_port = 443
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
