@@ -77,6 +77,11 @@ resource "aws_eip" "nat" {
   vpc = true
 }
 
+# Data block to get the network interface ID of the NAT instance
+data "aws_network_interface" "nat" {
+  instance_id = aws_instance.nat.id
+}
+
 # Route Tables
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.cellborg_vpc.id
@@ -93,7 +98,11 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.cellborg_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
-    instance_id = aws_instance.nat.id
+    network_interface_id = data.aws_network_interface.nat.id
+  }
+  route {
+    cidr_block = aws_vpc.cellborg_vpc.cidr_block
+    gateway_id = "local"
   }
   tags = {
     Name = "private-rt"
