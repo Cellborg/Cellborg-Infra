@@ -21,7 +21,7 @@ resource "aws_vpc" "cellborg_vpc" {
   }
 }
 
-resource "aws_subnet" "public_subnet" {
+resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.cellborg_vpc.id
   cidr_block              = var.public_subnet_cidr
   availability_zone       = var.availability_zone
@@ -31,7 +31,7 @@ resource "aws_subnet" "public_subnet" {
   }
 }
 
-resource "aws_subnet" "private_subnet" {
+resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.cellborg_vpc.id
   cidr_block        = var.private_subnet_cidr
   availability_zone = var.availability_zone
@@ -42,9 +42,9 @@ resource "aws_subnet" "private_subnet" {
 
 # Internet Gateway
 resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.cellborg_vpc.id
   tags = {
-    Name = "main-igw"
+    Name = "cellborg-igw"
   }
 }
 
@@ -79,7 +79,7 @@ resource "aws_eip" "nat" {
 
 # Route Tables
 resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.cellborg_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main.id
@@ -90,7 +90,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.cellborg_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
     instance_id = aws_instance.nat.id
@@ -113,7 +113,7 @@ resource "aws_route_table_association" "private" {
 
 # Security Groups
 resource "aws_security_group" "nat" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.cellborg_vpc.id
   ingress {
     from_port = 0
     to_port = 65535
@@ -132,7 +132,7 @@ resource "aws_security_group" "nat" {
 }
 
 resource "aws_security_group" "private" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = aws_vpc.cellborg_vpc.id
   ingress {
     from_port = 0
     to_port = 65535
