@@ -55,6 +55,7 @@ resource "aws_instance" "nat" {
   subnet_id = aws_subnet.public.id
   associate_public_ip_address = true
   source_dest_check = false
+  key_name = "nat-instance" # this is already existing , created manually.
   tags = {
     Name = "nat-instance"
   }
