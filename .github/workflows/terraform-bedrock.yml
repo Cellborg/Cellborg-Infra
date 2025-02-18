@@ -44,14 +44,16 @@ jobs:
           path: terraform-iac/bedrock/tfplan
   Approval:
     runs-on: ubuntu-latest
-    environment: beta
     needs: [Terraform_Plan]
     defaults:
       run:
         working-directory: namespaces
     steps:
-        - name: Checkout code to custom directory
-          uses: actions/checkout@v2
+      - uses: trstringer/manual-approval@v1
+      with:
+        secret: ${{ github.TOKEN }}
+        approvers: CellborgApprovers
+        minimum-approvals: 1
   apply:
     name: 'Terraform Apply'
     runs-on: ubuntu-latest
