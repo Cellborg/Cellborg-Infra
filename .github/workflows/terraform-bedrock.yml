@@ -49,9 +49,9 @@ jobs:
       run:
         working-directory: terraform-iac/bedrock
     steps:
-      - uses: trstringer/manual-approval@v1
+      - uses: trstringer/manual-approval@v1.9.1
         with:
-          secret: ${{ github.TOKEN }}
+          secret: ${{ secrets.GH_PAT_TOKEN }}
           approvers: seshun
           minimum-approvals: 1
   apply:
