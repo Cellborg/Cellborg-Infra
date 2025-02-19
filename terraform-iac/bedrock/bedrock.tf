@@ -185,7 +185,8 @@ resource "aws_instance" "nat" {
     market_type = "spot"
     spot_options {
       instance_interruption_behavior = "stop"
-      spot_instance_type                   = "persistent"
+      spot_instance_type             = "persistent"
+      max_price                      = 0.003
     }
   }
 
