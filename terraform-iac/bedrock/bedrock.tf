@@ -94,6 +94,7 @@ resource "aws_instance" "nat" {
   associate_public_ip_address = true
   source_dest_check = false
   key_name = "nat-instance" # this is already existing , created manually.
+  vpc_security_group_ids      = [aws_security_group.nat.id]
   tags = {
     Name = "nat-instance"
   }
