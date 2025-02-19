@@ -103,6 +103,79 @@ resource "aws_instance" "nat" {
               echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
               sysctl -p
               iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+              yum update -y
+              yum install -y nginx aws-cli
+              amazon-linux-extras install -y epel
+              yum install -y amazon-ssm-agent
+              systemctl enable amazon-ssm-agent
+              systemctl start amazon-ssm-agent
+
+              # Fetch IPs from DynamoDB
+              UI_IP=$(aws dynamodb get-item --table-name ecs-task-ips --key '{"task_type": {"S": "ui-container"}}' --query 'Item.private_ip.S' --output text || echo "NOT_FOUND")
+              API_IP=$(aws dynamodb get-item --table-name ecs-task-ips --key '{"task_type": {"S": "api-container"}}' --query 'Item.private_ip.S' --output text || echo "NOT_FOUND")
+
+              # Set default IPs if not found
+              if [ "$UI_IP" == "NOT_FOUND" ]; then
+                UI_IP="127.0.0.1"
+              fi
+
+              if [ "$API_IP" == "NOT_FOUND" ]; then
+                API_IP="127.0.0.1"
+              fi
+
+              cat <<EOT > /etc/nginx/nginx.conf
+              events {}
+              http {
+                  server {
+                      listen 80;
+                      server_name beta.cellborg.bio;
+                      location / {
+                          proxy_pass http://$UI_IP:80;
+                          proxy_set_header Host \$host;
+                          proxy_set_header X-Real-IP \$remote_addr;
+                          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                          proxy_set_header X-Forwarded-Proto \$scheme;
+                      }
+                  }
+                  server {
+                      listen 80;
+                      server_name api.beta.cellborg.bio;
+                      location / {
+                          proxy_pass http://$API_IP:80;
+                          proxy_set_header Host \$host;
+                          proxy_set_header X-Real-IP \$remote_addr;
+                          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                          proxy_set_header X-Forwarded-Proto \$scheme;
+                      }
+                  }
+              }
+              EOT
+
+              systemctl enable nginx
+              systemctl start nginx
+
+              # Script to update NGINX configuration with ECS task IPs
+              cat <<'EOT' > /usr/local/bin/update_nginx.sh
+              #!/bin/bash
+              UI_IP=$(aws dynamodb get-item --table-name ecs-task-ips --key '{"task_type": {"S": "ui-container"}}' --query 'Item.private_ip.S' --output text || echo "NOT_FOUND")
+              API_IP=$(aws dynamodb get-item --table-name ecs-task-ips --key '{"task_type": {"S": "api-container"}}' --query 'Item.private_ip.S' --output text || echo "NOT_FOUND")
+
+              if [ "$UI_IP" != "NOT_FOUND" ]; then
+                sed -i "s|proxy_pass http://.*:80;|proxy_pass http://$UI_IP:80;|g" /etc/nginx/nginx.conf
+              fi
+
+              if [ "$API_IP" != "NOT_FOUND" ]; then
+                sed -i "s|proxy_pass http://.*:80;|proxy_pass http://$API_IP:80;|g" /etc/nginx/nginx.conf
+              fi
+
+              systemctl reload nginx
+              EOT
+
+              chmod +x /usr/local/bin/update_nginx.sh
+              echo "*/5 * * * * root /usr/local/bin/update_nginx.sh" >> /etc/crontab
+              EOT
+              systemctl enable nginx
+              systemctl start nginx
               EOF
 
   lifecycle {
@@ -185,4 +258,9 @@ resource "aws_security_group" "private" {
   tags = {
     Name = "private-sg"
   }
+}
+
+# create an ECS cluster
+resource "aws_ecs_cluster" "cellborg_ecs_cluster" {
+  name = "cellborg-ecs-cluster"
 }

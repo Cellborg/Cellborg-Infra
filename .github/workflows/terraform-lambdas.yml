@@ -1,0 +1,95 @@
+name: Terraform Lambda Functions
+on:
+  workflow_dispatch:
+
+jobs:
+  Terraform_Plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VERSION: 1.0.0
+      AWS_REGION: us-east-1
+      S3_BUCKET: cellborg-tf-state
+      S3_KEY: lambdas.tfstate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config="bucket=${{ env.S3_BUCKET }}" -backend-config="key=${{ env.S3_KEY }}" -backend-config="region=${{ env.AWS_REGION }}"
+        working-directory: terraform-iac/lambda-functions
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan
+        working-directory: terraform-iac/lambda-functions
+
+      - name: Save Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform-iac/lambda-functions/tfplan
+  Approval:
+    runs-on: ubuntu-latest
+    needs: [Terraform_Plan]
+    defaults:
+      run:
+        working-directory: terraform-iac/lambda-functions
+    steps:
+      - uses: trstringer/manual-approval@v1.9.1
+        with:
+          secret: ${{ secrets.GH_PAT_TOKEN }}
+          approvers: ${{ vars.PIPELINE_APPROVERS }}
+          minimum-approvals: 1
+  apply:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest
+    needs: [Terraform_Plan, Approval]
+
+    env:
+      TF_VERSION: 1.0.0
+      AWS_REGION: us-east-1
+      S3_BUCKET: cellborg-tf-state
+      S3_KEY: lambdas.tfstate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Terraform Init
+        run: terraform init -backend-config="bucket=${{ env.S3_BUCKET }}" -backend-config="key=${{ env.S3_KEY }}" -backend-config="region=${{ env.AWS_REGION }}"
+        working-directory: terraform-iac/lambda-functions
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform-iac/lambda-functions
+
+      - name: Terraform Apply
+        run: terraform apply tfplan
+        working-directory: terraform-iac/lambda-functions

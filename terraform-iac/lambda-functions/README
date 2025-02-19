@@ -1,0 +1,17 @@
+Building zip file
+
+If you update any code inside ecs-privateip-dynamo or ssm-update-nginx..follow below steps.
+
+cd ecs-privateip-dynamo
+npm install  xxx  // any new packages.
+cd ..
+
+build zip file
+
+Windows 
+   Compress-Archive -Path .\ecs-privateip-dynamo\ -DestinationPath lambda-ecs-privateip-dynamo.zip
+
+Mac 
+   zip -r lambda-ecs-privateip-dynamo.zip ./ecs-privateip-dynamo
+
+Ensure to check in zip file into git repository.

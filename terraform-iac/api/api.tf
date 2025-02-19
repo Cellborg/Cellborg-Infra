@@ -11,18 +11,22 @@ terraform {
   }
 }
 
+data "aws_ecs_cluster" "cellborg_ecs_cluster" {
+  cluster_name = "cellborg-ecs-cluster"
+}
+
 resource "aws_ecs_task_definition" "api_task" {
   family                   = "Cellborg-${var.environment}-Api-Task"
   network_mode             = "awsvpc"
-  requires_compatibilities = ["EC2"]
+  requires_compatibilities = ["FARGATE"]
+  memory                   = var.api_memory
+  cpu                      = var.api_cpu
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.api_task_role.arn
 
   container_definitions = jsonencode([{
     name      = "cellborg-${var.environment}-api"
     image     = "${aws_ecr_repository.api_repo.repository_url}:latest"
-    memory    = 674
-    cpu       = 896
     essential = true
     environment = [
       {
@@ -55,7 +59,7 @@ resource "aws_ecs_task_definition" "api_task" {
 
 resource "aws_ecs_service" "api_service" {
   name            = "Cellborg-${var.environment}-Api"
-  cluster         = aws_ecs_cluster.api_cluster.id
+  cluster         = data.aws_ecs_cluster.cellborg_ecs_cluster.id
   task_definition = aws_ecs_task_definition.api_task.arn
   desired_count   = 1
   launch_type     = "EC2"
