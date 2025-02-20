@@ -28,5 +28,5 @@ variable "api_cpu" {
 variable "docker_image" {
   description = "ECR docker image for api"
   type        = string
-  default     = 536697236385.dkr.ecr.us-east-1.amazonaws.com/cellborg-beta-api:latest
+  default     = "536697236385.dkr.ecr.us-east-1.amazonaws.com/cellborg-beta-api:latest"
 }
