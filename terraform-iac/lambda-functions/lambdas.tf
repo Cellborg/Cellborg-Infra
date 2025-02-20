@@ -64,7 +64,7 @@ resource "aws_lambda_function" "update_task_ips" {
   function_name    = "update-task-ips"
   role             = aws_iam_role.lambda_role.arn
   handler          = "index.handler"
-  runtime          = "nodejs14.x"
+  runtime          = "nodejs22.x"
   source_code_hash = filebase64sha256("lambda-ecs-privateip-dynamo.zip")
 
   environment {
@@ -137,7 +137,7 @@ resource "aws_lambda_function" "trigger_ssm_command" {
   function_name    = "trigger-ssm-command"
   role             = aws_iam_role.lambda_role.arn
   handler          = "index.handler"
-  runtime          = "nodejs14.x"
+  runtime          = "nodejs22.x"
   source_code_hash = filebase64sha256("lambda-ssm-update-nginx.zip")
 
   environment {
