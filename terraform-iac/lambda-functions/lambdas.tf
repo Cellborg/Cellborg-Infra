@@ -27,6 +27,14 @@ resource "aws_dynamodb_table" "ecs_task_ips" {
   }
 }
 
+# Data block for NAT instance
+data "aws_instance" "nat" {
+  filter {
+    name   = "tag:Name"
+    values = ["nat-instance"]
+  }
+}
+
 # create ecs-privateip-dynamodb lamba function
 # This function update the DynamoDB table with the private IPs of the ECS tasks.
 resource "aws_iam_role" "lambda_role" {
@@ -135,7 +143,7 @@ resource "aws_lambda_function" "trigger_ssm_command" {
   environment {
     variables = {
       SSM_DOCUMENT_NAME = aws_ssm_document.update_nginx.name
-      INSTANCE_ID       = aws_instance.nat.id
+      INSTANCE_ID       = data.aws_instance.nat.id
     }
   }
 }
