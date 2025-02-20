@@ -55,7 +55,7 @@ resource "aws_iam_role" "lambda_role" {
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
     "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
-    "arn:aws:iam::aws:policy/AmazonECSReadOnlyAccess"
+    "arn:aws:iam::aws:policy/AmazonECSTaskExecutionRolePolicy"
   ]
 }
 
