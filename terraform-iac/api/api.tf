@@ -26,7 +26,7 @@ resource "aws_ecs_task_definition" "api_task" {
 
   container_definitions = jsonencode([{
     name      = "cellborg-${var.environment}-api"
-    image     = "${aws_ecr_repository.api_repo.repository_url}:latest"
+    image     = var.docker_image
     essential = true
     environment = [
       {
