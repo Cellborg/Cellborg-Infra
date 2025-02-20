@@ -52,7 +52,7 @@ jobs:
       - uses: trstringer/manual-approval@v1.9.1
         with:
           secret: ${{ secrets.GH_PAT_TOKEN }}
-          approvers: seshun
+          approvers: ${{ vars.PIPELINE_APPROVERS }}
           minimum-approvals: 1
   apply:
     name: 'Terraform Apply'
