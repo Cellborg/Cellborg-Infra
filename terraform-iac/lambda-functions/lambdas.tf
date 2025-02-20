@@ -133,12 +133,12 @@ resource "aws_ssm_document" "update_nginx" {
 }
 
 resource "aws_lambda_function" "trigger_ssm_command" {
-  filename         = "lambda.zip" # Path to your Lambda function zip file
+  filename         = "lambda-ssm-update-nginx.zip" # Path to your Lambda function zip file
   function_name    = "trigger-ssm-command"
   role             = aws_iam_role.lambda_role.arn
   handler          = "index.handler"
   runtime          = "nodejs14.x"
-  source_code_hash = filebase64sha256("lambda.zip")
+  source_code_hash = filebase64sha256("lambda-ssm-update-nginx.zip")
 
   environment {
     variables = {
