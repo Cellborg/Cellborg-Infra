@@ -2,7 +2,9 @@
 !jest.config.js
 *.d.ts
 node_modules
-
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+terraform-iac/lambda-functions/ecs-privateip-dynamo/node_modules
+terraform-iac/lambda-functions/ssm-update-nginx/node_modules
+
