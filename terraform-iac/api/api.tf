@@ -63,6 +63,8 @@ resource "aws_ecs_task_definition" "api_task" {
   }])
 }
 
+
+
 resource "aws_ecs_service" "api_service" {
   name            = "Cellborg-${var.environment}-Api"
   cluster         = data.aws_ecs_cluster.cellborg_ecs_cluster.id
@@ -72,12 +74,5 @@ resource "aws_ecs_service" "api_service" {
   network_configuration {
     subnets          = aws_subnet.compute_subnets[*].id
     security_groups  = [aws_security_group.api_sec_group.id]
-    assign_public_ip = true
   }
-  load_balancer {
-    target_group_arn = aws_lb_target_group.api_target_group.arn
-    container_name   = "cellborg-${var.environment}-api"
-    container_port   = 443
-  }
-  depends_on = [aws_lb_listener.api_listener]
 }

@@ -334,3 +334,115 @@ resource "aws_iam_role" "frontend_task_role" {
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
   ]
 }
+
+
+# create security Groups
+
+# Security Group for API
+resource "aws_security_group" "api_sec_group" {
+  vpc_id = aws_vpc.cellborg_vpc.id
+  description = "Security group for API"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "ApiSecGroup"
+  }
+}
+
+# Security Group for Frontend
+resource "aws_security_group" "frontend_sec_group" {
+  vpc_id = aws_vpc.cellborg_vpc.id
+  description = "Security group for Frontend"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "FrontendSecGroup"
+  }
+}
+
+# Ingress Rule: Allow frontend to access API on port 443
+resource "aws_security_group_rule" "frontend_to_api" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.api_sec_group.id
+  source_security_group_id = aws_security_group.frontend_sec_group.id
+  description              = "Allow frontend to access API on port 443"
+}
+
+# Ingress Rule: Allow external HTTPS traffic to API
+resource "aws_security_group_rule" "external_to_api" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.api_sec_group.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow external HTTPS traffic to API"
+}
+
+# Ingress Rule: Allow NAT instance to access API on port 80
+resource "aws_security_group_rule" "nat_to_api_80" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.api_sec_group.id
+  source_security_group_id = aws_security_group.nat_sg.id
+  description              = "Allow NAT instance to access API on port 80"
+}
+
+# Ingress Rule: Allow NAT instance to access API on port 443
+resource "aws_security_group_rule" "nat_to_api_443" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.api_sec_group.id
+  source_security_group_id = aws_security_group.nat_sg.id
+  description              = "Allow NAT instance to access API on port 443"
+}
+
+#====frontend rules=====
+
+# Ingress Rule: Allow external traffic to Frontend on port 3000
+resource "aws_security_group_rule" "external_to_frontend" {
+  type              = "ingress"
+  from_port         = 3000
+  to_port           = 3000
+  protocol          = "tcp"
+  security_group_id = aws_security_group.frontend_sec_group.id
+  cidr_blocks       = ["0.0.0.0/0"]
+  description       = "Allow external traffic to Frontend on port 3000"
+}
+
+# Ingress Rule: Allow NAT instance to access Frontend on port 80
+resource "aws_security_group_rule" "nat_to_frontend_80" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.frontend_sec_group.id
+  source_security_group_id = aws_security_group.nat_sg.id
+  description              = "Allow NAT instance to access Frontend on port 80"
+}
+
+# Ingress Rule: Allow NAT instance to access Frontend on port 443
+resource "aws_security_group_rule" "nat_to_frontend_443" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.frontend_sec_group.id
+  source_security_group_id = aws_security_group.nat_sg.id
+  description              = "Allow NAT instance to access Frontend on port 443"
+}
