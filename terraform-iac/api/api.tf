@@ -86,7 +86,7 @@ resource "aws_ecs_service" "api_service" {
   desired_count   = 1
   launch_type     = "EC2"
   network_configuration {
-    subnets          = data.aws_subnet.private.id
+    subnets          = [data.aws_subnet.private.id]
     security_groups  = [data.aws_security_group.api_sec_group.id]
   }
 }
