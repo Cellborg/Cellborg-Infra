@@ -14,7 +14,13 @@ terraform {
 data "aws_ecs_cluster" "cellborg_ecs_cluster" {
   cluster_name = "cellborg-ecs-cluster"
 }
+data "aws_iam_role" "ecs_execution_role" {
+  name = "ecsTaskExecutionRole"
+}
 
+data "aws_iam_role" "api_task_role" {
+  name = "Cellborg-ApiTaskRole"
+}
 resource "aws_ecs_task_definition" "api_task" {
   family                   = "Cellborg-${var.environment}-Api-Task"
   network_mode             = "awsvpc"
