@@ -16,13 +16,13 @@ variable "jwt_secret" {
 variable "api_memory" {
   description = "The amount of memory (in MiB) used by the API task"
   type        = number
-  default     = 674
+  default     = 1024
 }
 
 variable "api_cpu" {
   description = "The number of CPU units used by the API task"
   type        = number
-  default     = 896
+  default     = 512
 }
 
 variable "docker_image" {
