@@ -397,7 +397,7 @@ resource "aws_security_group_rule" "nat_to_api_80" {
   to_port                  = 80
   protocol                 = "tcp"
   security_group_id        = aws_security_group.api_sec_group.id
-  source_security_group_id = aws_security_group.nat_sg.id
+  source_security_group_id = aws_security_group.nat.id
   description              = "Allow NAT instance to access API on port 80"
 }
 
@@ -408,7 +408,7 @@ resource "aws_security_group_rule" "nat_to_api_443" {
   to_port                  = 443
   protocol                 = "tcp"
   security_group_id        = aws_security_group.api_sec_group.id
-  source_security_group_id = aws_security_group.nat_sg.id
+  source_security_group_id = aws_security_group.nat.id
   description              = "Allow NAT instance to access API on port 443"
 }
 
@@ -432,7 +432,7 @@ resource "aws_security_group_rule" "nat_to_frontend_80" {
   to_port                  = 80
   protocol                 = "tcp"
   security_group_id        = aws_security_group.frontend_sec_group.id
-  source_security_group_id = aws_security_group.nat_sg.id
+  source_security_group_id = aws_security_group.nat.id
   description              = "Allow NAT instance to access Frontend on port 80"
 }
 
@@ -443,6 +443,6 @@ resource "aws_security_group_rule" "nat_to_frontend_443" {
   to_port                  = 443
   protocol                 = "tcp"
   security_group_id        = aws_security_group.frontend_sec_group.id
-  source_security_group_id = aws_security_group.nat_sg.id
+  source_security_group_id = aws_security_group.nat.id
   description              = "Allow NAT instance to access Frontend on port 443"
 }
