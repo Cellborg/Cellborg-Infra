@@ -63,7 +63,21 @@ resource "aws_ecs_task_definition" "api_task" {
   }])
 }
 
+# Data block for API Security Group
+data "aws_security_group" "api_sec_group" {
+  filter {
+    name   = "tag:Name"
+    values = ["ApiSecGroup"]
+  }
+}
 
+# Data block for Private Subnet
+data "aws_subnet" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["Cellborg-Private-Subnet"]
+  }
+}
 
 resource "aws_ecs_service" "api_service" {
   name            = "Cellborg-${var.environment}-Api"
@@ -72,7 +86,7 @@ resource "aws_ecs_service" "api_service" {
   desired_count   = 1
   launch_type     = "EC2"
   network_configuration {
-    subnets          = aws_subnet.compute_subnets[*].id
-    security_groups  = [aws_security_group.api_sec_group.id]
+    subnets          = data.aws_subnet.private.id
+    security_groups  = [data.aws_security_group.api_sec_group.id]
   }
 }
