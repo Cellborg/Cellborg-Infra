@@ -27,8 +27,8 @@ resource "aws_ecs_task_definition" "api_task" {
   requires_compatibilities = ["FARGATE"]
   memory                   = var.api_memory
   cpu                      = var.api_cpu
-  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
-  task_role_arn            = aws_iam_role.api_task_role.arn
+  execution_role_arn       = data.aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = data.aws_iam_role.api_task_role.arn
 
   container_definitions = jsonencode([{
     name      = "cellborg-${var.environment}-api"
