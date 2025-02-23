@@ -80,6 +80,7 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
 
 resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
   name = "api-ecs-spot-capacity-provider"
+  
 
   auto_scaling_group_provider {
     auto_scaling_group_arn         = aws_autoscaling_group.ecs_spot_asg.arn
