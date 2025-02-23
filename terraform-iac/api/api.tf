@@ -76,6 +76,7 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
   lifecycle {
     create_before_destroy = true
   }
+  instance_protection = true
 }
 
 resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
