@@ -92,7 +92,7 @@ resource "aws_ecs_capacity_provider" "ecs_spot_capacity_provider" {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
-  cluster_name = data.aws_ecs_cluster.cellborg_ecs_cluster.name
+  cluster_name = "cellborg-ecs-cluster"
   capacity_providers = [aws_ecs_capacity_provider.ecs_spot_capacity_provider.name]
   default_capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.ecs_spot_capacity_provider.name
