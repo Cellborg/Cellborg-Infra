@@ -21,6 +21,85 @@ data "aws_iam_role" "ecs_execution_role" {
 data "aws_iam_role" "api_task_role" {
   name = "Cellborg-ApiTaskRole"
 }
+
+resource "aws_launch_template" "ecs_spot_launch_template" {
+  name_prefix   = "ecs-spot-launch-template-"
+  image_id      = "ami-0c55b159cbfafe1f0" # Replace with your desired AMI ID
+  instance_type = "t3.micro"
+
+  key_name = "nat-instance" # Replace with your key pair name
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [data.aws_security_group.api_sec_group.id]
+  }
+
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              echo "Starting ECS agent..."
+              echo ECS_CLUSTER=${data.aws_ecs_cluster.cellborg_ecs_cluster.id} >> /etc/ecs/ecs.config
+              EOF
+  )
+
+  tags = {
+    Name = "ecs-spot-launch-template"
+  }
+}
+
+resource "aws_autoscaling_group" "ecs_spot_asg" {
+  desired_capacity     = 1
+  max_size             = 3
+  min_size             = 1
+  vpc_zone_identifier  = [data.aws_subnet.private.id]
+  launch_template {
+    id      = aws_launch_template.ecs_spot_launch_template.id
+    version = "$Latest"
+  }
+
+  mixed_instances_policy {
+    instances_distribution {
+      on_demand_base_capacity                  = 0
+      on_demand_percentage_above_base_capacity = 0
+      spot_allocation_strategy                 = "capacity-optimized"
+    }
+
+    launch_template {
+      launch_template_specification {
+        launch_template_id = aws_launch_template.ecs_spot_launch_template.id
+        version            = "$Latest"
+      }
+    }
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "ecs-spot-instance"
+    propagate_at_launch = true
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_ecs_capacity_provider" "ecs_spot_capacity_provider" {
+  name = "ecs-spot-capacity-provider"
+
+  auto_scaling_group_provider {
+    auto_scaling_group_arn         = aws_autoscaling_group.ecs_spot_asg.arn
+    managed_termination_protection = "ENABLED"
+  }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
+  cluster_name = data.aws_ecs_cluster.cellborg_ecs_cluster.id
+  capacity_providers = [aws_ecs_capacity_provider.ecs_spot_capacity_provider.name]
+  default_capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.ecs_spot_capacity_provider.name
+    weight            = 1
+  }
+}
+
 resource "aws_ecs_task_definition" "api_task" {
   family                   = "Cellborg-${var.environment}-Api-Task"
   network_mode             = "awsvpc"
@@ -87,6 +166,10 @@ resource "aws_ecs_service" "api_service" {
   task_definition = aws_ecs_task_definition.api_task.arn
   desired_count   = 1
   launch_type     = "EC2"
+  capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.ecs_spot_capacity_provider.name
+    weight            = 1
+  }
   network_configuration {
     subnets          = [data.aws_subnet.private.id]
     security_groups  = [data.aws_security_group.api_sec_group.id]
