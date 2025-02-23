@@ -76,7 +76,6 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
   lifecycle {
     create_before_destroy = true
   }
-  instance_protection = true
 }
 
 resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
@@ -85,6 +84,9 @@ resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
   auto_scaling_group_provider {
     auto_scaling_group_arn         = aws_autoscaling_group.ecs_spot_asg.arn
     managed_termination_protection = "ENABLED"
+    target_capacity           = 100
+    minimum_scaling_step_size = 1
+    maximum_scaling_step_size = 2
   }
 }
 
