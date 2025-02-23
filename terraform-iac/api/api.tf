@@ -34,6 +34,8 @@ resource "aws_ecs_task_definition" "api_task" {
     name      = "cellborg-${var.environment}-api"
     image     = var.docker_image
     essential = true
+    cpu       = var.api_cpu
+    memory    = var.api_memory
     environment = [
       {
         name  = "NODE_ENV"
