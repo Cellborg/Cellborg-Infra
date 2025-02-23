@@ -51,10 +51,6 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
   max_size             = 3
   min_size             = 1
   vpc_zone_identifier  = [data.aws_subnet.private.id]
-  launch_template {
-    id      = aws_launch_template.ecs_spot_launch_template.id
-    version = "$Latest"
-  }
 
   mixed_instances_policy {
     instances_distribution {
