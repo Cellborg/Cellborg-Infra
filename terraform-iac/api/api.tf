@@ -78,6 +78,14 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
   }
 }
 
+resource "aws_autoscaling_group_tag" "asg_instance_protection" {
+  autoscaling_group_name = aws_autoscaling_group.ecs_spot_asg.name
+  key                    = "aws:autoscaling:groupName"
+  value                  = aws_autoscaling_group.ecs_spot_asg.name
+  propagate_at_launch    = true
+  force_delete           = true
+}
+
 resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
   name = "api-ecs-spot-capacity-provider"
   
