@@ -63,6 +63,12 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
       spot_allocation_strategy                 = "capacity-optimized"
     }
 
+    launch_template {
+      launch_template_specification {
+        launch_template_id = aws_launch_template.ecs_spot_launch_template.id
+        version            = "$Latest"
+      }
+    }
   }
 
   tag {
