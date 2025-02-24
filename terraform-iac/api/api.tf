@@ -67,12 +67,6 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
     }
   }
 
-tag {
-    key                 = "AmazonECSManaged"
-    value               = true
-    propagate_at_launch = true
-  }
-
 }
 
 resource "aws_autoscaling_group_tag" "asg_instance_protection" {
