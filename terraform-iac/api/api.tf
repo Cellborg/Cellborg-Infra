@@ -67,15 +67,12 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
     }
   }
 
-  tag {
-    key                 = "Name"
-    value               = "ecs-spot-instance"
+tag {
+    key                 = "AmazonECSManaged"
+    value               = true
     propagate_at_launch = true
   }
 
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_autoscaling_group_tag" "asg_instance_protection" {
