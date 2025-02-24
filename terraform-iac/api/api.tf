@@ -48,7 +48,7 @@ resource "aws_launch_template" "ecs_spot_launch_template" {
 
 resource "aws_autoscaling_group" "ecs_spot_asg" {
   desired_capacity     = 1
-  max_size             = 3
+  max_size             = 1
   min_size             = 1
   vpc_zone_identifier  = [data.aws_subnet.private.id]
 
