@@ -30,7 +30,7 @@ resource "aws_launch_template" "ecs_spot_launch_template" {
   key_name = "nat-instance" # Replace with your key pair name
 
   network_interfaces {
-    associate_public_ip_address = true
+    associate_public_ip_address = false
     security_groups             = [data.aws_security_group.api_sec_group.id]
   }
 
