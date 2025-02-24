@@ -69,14 +69,6 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
 
 }
 
-resource "aws_autoscaling_group_tag" "asg_instance_protection" {
-  autoscaling_group_name = aws_autoscaling_group.ecs_spot_asg.name
-  tag{
-    key                    = "aws:autoscaling:groupName"
-    value                  = aws_autoscaling_group.ecs_spot_asg.name
-    propagate_at_launch    = true
-  }
-}
 
 resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
   name = "api-ecs-spot-capacity-provider"
@@ -167,7 +159,6 @@ resource "aws_ecs_service" "api_service" {
   cluster         = data.aws_ecs_cluster.cellborg_ecs_cluster.id
   task_definition = aws_ecs_task_definition.api_task.arn
   desired_count   = 1
-  launch_type     = "EC2"
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.api_ecs_spot_capacity_provider.name
     weight            = 1
