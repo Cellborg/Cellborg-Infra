@@ -108,7 +108,7 @@ resource "aws_ecs_task_definition" "api_task" {
     image     = var.docker_image
     essential = true
     cpu       = var.api_cpu
-    memory    = 512
+    memory    = var.api_memory
     environment = [
       {
         name  = "NODE_ENV"
