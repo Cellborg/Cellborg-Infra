@@ -70,20 +70,6 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
 }
 
 
-resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
-  name = "api-ecs-spot-capacity-provider"
-  
-
-  auto_scaling_group_provider {
-    auto_scaling_group_arn         = aws_autoscaling_group.ecs_spot_asg.arn
-    managed_scaling {
-      maximum_scaling_step_size = 2
-      minimum_scaling_step_size = 1
-      status                    = "ENABLED"
-      target_capacity           = 100
-    }
-  }
-}
 
 resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
   cluster_name = "cellborg-ecs-cluster"
@@ -160,7 +146,7 @@ resource "aws_ecs_service" "api_service" {
   task_definition = aws_ecs_task_definition.api_task.arn
   desired_count   = 1
   capacity_provider_strategy {
-    capacity_provider = aws_ecs_capacity_provider.api_ecs_spot_capacity_provider.name
+    capacity_provider = "FARGATE_SPOT"
     weight            = 1
   }
   network_configuration {
