@@ -80,7 +80,7 @@ resource "aws_ecs_capacity_provider" "api_ecs_spot_capacity_provider" {
       maximum_scaling_step_size = 2
       minimum_scaling_step_size = 1
       status                    = "ENABLED"
-      target_capacity           = 100
+      target_capacity           = 80
     }
   }
 }
