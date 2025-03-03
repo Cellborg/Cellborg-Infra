@@ -277,14 +277,17 @@ resource "aws_iam_role" "ecs_execution_role" {
   name = "ecsTaskExecutionRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+                "Service": [
+                    "ecs.amazonaws.com",
+                    "ec2.amazonaws.com"
+                ]
+            },
+            "Effect": "Allow"
         }
-        Action = "sts:AssumeRole"
-      }
     ]
   })
 
@@ -298,14 +301,17 @@ resource "aws_iam_role" "api_task_role" {
   name = "Cellborg-ApiTaskRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+                "Service": [
+                    "ecs.amazonaws.com",
+                    "ec2.amazonaws.com"
+                ]
+            },
+            "Effect": "Allow"
         }
-        Action = "sts:AssumeRole"
-      }
     ]
   })
 
@@ -319,14 +325,17 @@ resource "aws_iam_role" "frontend_task_role" {
   name = "Cellborg-FrontendTaskRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+                "Service": [
+                    "ecs.amazonaws.com",
+                    "ec2.amazonaws.com"
+                ]
+            },
+            "Effect": "Allow"
         }
-        Action = "sts:AssumeRole"
-      }
     ]
   })
 
