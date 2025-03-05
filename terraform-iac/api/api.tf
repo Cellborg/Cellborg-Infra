@@ -24,7 +24,7 @@ data "aws_iam_role" "api_task_role" {
 
 resource "aws_launch_template" "ecs_spot_launch_template" {
   name_prefix   = "ecs-spot-launch-template-"
-  image_id      = "ami-02651dfcdf3103c67" # Replace with your desired AMI ID
+  image_id      = "ami-08162bd4e1350c72c" # Replace with your desired AMI ID
   instance_type = "t2.small"
 
   key_name = "nat-instance" # Replace with your key pair name
