@@ -53,7 +53,7 @@ resource "aws_launch_template" "ecs_spot_launch_template" {
 # Create IAM Instance Profile
 resource "aws_iam_instance_profile" "ecs_instance_profile" {
   name = "ecsInstanceProfile"
-  role = data.aws_iam_role.ecs_task_execution_role.name
+  role = data.aws_iam_role.ecs_execution_role.name
 }
 
 resource "aws_autoscaling_group" "ecs_spot_asg" {
