@@ -282,6 +282,7 @@ resource "aws_iam_role" "ecs_execution_role" {
             "Action": "sts:AssumeRole",
             "Principal": {
                 "Service": [
+                    "ecs-tasks.amazonaws.com",
                     "ecs.amazonaws.com",
                     "ec2.amazonaws.com"
                 ]
@@ -293,6 +294,8 @@ resource "aws_iam_role" "ecs_execution_role" {
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   ]
 }
 
@@ -306,6 +309,7 @@ resource "aws_iam_role" "api_task_role" {
             "Action": "sts:AssumeRole",
             "Principal": {
                 "Service": [
+                    "ecs-tasks.amazonaws.com",
                     "ecs.amazonaws.com",
                     "ec2.amazonaws.com"
                 ]
@@ -330,6 +334,7 @@ resource "aws_iam_role" "frontend_task_role" {
             "Action": "sts:AssumeRole",
             "Principal": {
                 "Service": [
+                    "ecs-tasks.amazonaws.com",
                     "ecs.amazonaws.com",
                     "ec2.amazonaws.com"
                 ]
