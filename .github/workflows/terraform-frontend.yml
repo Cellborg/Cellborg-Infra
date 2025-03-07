@@ -13,7 +13,6 @@ jobs:
       AWS_REGION: us-east-1
       S3_BUCKET: cellborg-tf-state
       S3_KEY: frontend.tfstate
-      TF_LOG: DEBUG
 
     steps:
       - name: Checkout code
