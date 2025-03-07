@@ -170,7 +170,7 @@ resource "aws_ecs_service" "frontend_service" {
   task_definition = aws_ecs_task_definition.frontend_task.arn
   desired_count   = 1
   capacity_provider_strategy {
-    capacity_provider = aws_ecs_capacity_provider.frontned_ecs_spot_capacity_provider.name
+    capacity_provider = aws_ecs_capacity_provider.frontend_ecs_spot_capacity_provider.name
     weight            = 1
   }
   network_configuration {
