@@ -51,7 +51,7 @@ resource "aws_launch_template" "ecs_spot_launch_template_frontend" {
 }
 
 # IAM Instance Profile. This is created in API.
-create "aws_iam_instance_profile" "ecs_instance_profile_frontend" {
+resource "aws_iam_instance_profile" "ecs_instance_profile_frontend" {
   name = "ecsInstanceProfile"
   role = data.aws_iam_role.ecs_execution_role.name
 }
