@@ -1,68 +1,180 @@
-name: Terraform API Workflow
+provider "aws" {
+  region = "us-east-1"  # Change to your desired region
+}
 
-on:
-  workflow_dispatch:
+terraform {
+  backend "s3" {
+    bucket         = "cellborg-tf-state"
+    key            = "frontend.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+  }
+}
 
-jobs:
-  terraform:
-    name: 'Terraform Plan and Apply'
-    runs-on: ubuntu-latest
+data "aws_ecs_cluster" "cellborg_ecs_cluster" {
+  cluster_name = "cellborg-ecs-cluster"
+}
+data "aws_iam_role" "ecs_execution_role" {
+  name = "ecsTaskExecutionRole"
+}
 
-    env:
-      TF_VERSION: 1.0.0
-      AWS_REGION: us-east-1
-      S3_BUCKET: cellborg-tf-state
-      S3_KEY: api.tfstate
+data "aws_iam_role" "frontend_task_role" {
+  name = "Cellborg-FrontendTaskRole"
+}
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+resource "aws_launch_template" "ecs_spot_launch_template" {
+  name_prefix   = "ecs-spot-launch-template-"
+  image_id      = "ami-08162bd4e1350c72c" # Replace with your desired AMI ID
+  instance_type = "t2.small"
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+  key_name = "nat-instance" # Replace with your key pair name
 
-      - name: Terraform Init
-        run: terraform init -backend-config="bucket=${{ env.S3_BUCKET }}" -backend-config="key=${{ env.S3_KEY }}" -backend-config="region=${{ env.AWS_REGION }}"
-        working-directory: terraform-iac/api
+  network_interfaces {
+    associate_public_ip_address = false
+    security_groups             = [data.aws_security_group.frontend_sec_group.id]
+  }
 
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-        working-directory: terraform-iac/api
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance_profile.name
+  }
 
-      - name: Save Plan
-        uses: actions/upload-artifact@v2
-        with:
-          name: tfplan
-          path: terraform-iac/api/tfplan
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              echo "Starting ECS agent..."
+              echo ECS_CLUSTER=${data.aws_ecs_cluster.cellborg_ecs_cluster.id} >> /etc/ecs/ecs.config
+              EOF
+  )
 
-  apply:
-    name: 'Terraform Apply'
-    runs-on: ubuntu-latest
-    needs: terraform
+  tags = {
+    Name = "ecs-spot-launch-template"
+  }
+}
 
-    env:
-      TF_VERSION: 1.0.0
-      AWS_REGION: us-east-1
-      S3_BUCKET: cellborg-tf-state
-      S3_KEY: api.tfstate
+# Create IAM Instance Profile
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "ecsInstanceProfile"
+  role = data.aws_iam_role.ecs_execution_role.name
+}
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+resource "aws_autoscaling_group" "ecs_spot_asg" {
+  desired_capacity     = 1
+  max_size             = 1
+  min_size             = 1
+  vpc_zone_identifier  = [data.aws_subnet.private.id]
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+  mixed_instances_policy {
+    instances_distribution {
+      on_demand_base_capacity                  = 0
+      on_demand_percentage_above_base_capacity = 0
+      spot_allocation_strategy                 = "capacity-optimized"
+    }
 
-      - name: Download Plan
-        uses: actions/download-artifact@v2
-        with:
-          name: tfplan
-          path: terraform-iac/api
+    launch_template {
+      launch_template_specification {
+        launch_template_id = aws_launch_template.ecs_spot_launch_template.id
+        version            = "$Latest"
+      }
+    }
+  }
 
-      - name: Terraform Apply
-        run: terraform apply tfplan
-        working-directory: terraform-iac/api
+}
+
+
+resource "aws_ecs_capacity_provider" "frontend_ecs_spot_capacity_provider" {
+  name = "frontend-ecs-spot-capacity-provider"
+  
+
+  auto_scaling_group_provider {
+    auto_scaling_group_arn         = aws_autoscaling_group.ecs_spot_asg.arn
+    managed_scaling {
+      maximum_scaling_step_size = 2
+      minimum_scaling_step_size = 1
+      status                    = "ENABLED"
+      target_capacity           = 80
+    }
+  }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
+  cluster_name = "cellborg-ecs-cluster"
+  capacity_providers = [aws_ecs_capacity_provider.frontend_ecs_spot_capacity_provider.name]
+  default_capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.frontend_ecs_spot_capacity_provider.name
+    weight            = 1
+  }
+}
+
+resource "aws_ecs_task_definition" "frontend_task" {
+  family                   = "Cellborg-${var.environment}-Frontend-Task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["EC2"]
+  memory                   = var.frontend_memory
+  cpu                      = var.frontend_cpu
+  execution_role_arn       = data.aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = data.aws_iam_role.frontend_task_role.arn
+
+  container_definitions = jsonencode([{
+    name      = "cellborg-${var.environment}-frontend"
+    image     = var.docker_image
+    essential = true
+    cpu       = var.frontend_cpu
+    memory    = var.frontend_memory
+    environment = [
+      {
+        name  = "NODE_ENV"
+        value = var.environment
+      },
+      {
+        name  = "NEXTAUTH_SECRET"
+        value = var.nextauth_secret
+      },
+      {
+        name  = "NEXTAUTH_URL"
+        value = var.frontend_url
+      }
+    ]
+    log_configuration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = "/ecs/Cellborg-${var.environment}-Frontend-Task"
+        awslogs-region        = "us-east-1"
+        awslogs-stream-prefix = "ecs"
+      }
+    }
+    port_mappings = [{
+      containerPort = 443
+      protocol      = "tcp"
+    }]
+  }])
+}
+
+# Data block for Frontend Security Group
+data "aws_security_group" "frontend_sec_group" {
+  filter {
+    name   = "tag:Name"
+    values = ["FrontendSecGroup"]
+  }
+}
+
+# Data block for Private Subnet
+data "aws_subnet" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["Cellborg-Private-Subnet"]
+  }
+}
+
+resource "aws_ecs_service" "frontend_service" {
+  name            = "Cellborg-${var.environment}-Frontend"
+  cluster         = data.aws_ecs_cluster.cellborg_ecs_cluster.id
+  task_definition = aws_ecs_task_definition.frontend_task.arn
+  desired_count   = 1
+  capacity_provider_strategy {
+    capacity_provider = aws_ecs_capacity_provider.frontned_ecs_spot_capacity_provider.name
+    weight            = 1
+  }
+  network_configuration {
+    subnets          = [data.aws_subnet.private.id]
+    security_groups  = [data.aws_security_group.frontend_sec_group.id]
+  }
+}
