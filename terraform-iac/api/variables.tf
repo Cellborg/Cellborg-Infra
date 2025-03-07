@@ -16,11 +16,17 @@ variable "jwt_secret" {
 variable "api_memory" {
   description = "The amount of memory (in MiB) used by the API task"
   type        = number
-  default     = 674
+  default     = 1024
 }
 
 variable "api_cpu" {
   description = "The number of CPU units used by the API task"
   type        = number
-  default     = 896
+  default     = 512
+}
+
+variable "docker_image" {
+  description = "ECR docker image for api"
+  type        = string
+  default     = "536697236385.dkr.ecr.us-east-1.amazonaws.com/cellborg-beta-api:latest"
 }

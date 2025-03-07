@@ -27,6 +27,14 @@ resource "aws_dynamodb_table" "ecs_task_ips" {
   }
 }
 
+# Data block for NAT instance
+data "aws_instance" "nat" {
+  filter {
+    name   = "tag:Name"
+    values = ["nat-instance"]
+  }
+}
+
 # create ecs-privateip-dynamodb lamba function
 # This function update the DynamoDB table with the private IPs of the ECS tasks.
 resource "aws_iam_role" "lambda_role" {
@@ -47,7 +55,7 @@ resource "aws_iam_role" "lambda_role" {
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
     "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess",
-    "arn:aws:iam::aws:policy/AmazonECSReadOnlyAccess"
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
   ]
 }
 
@@ -56,7 +64,7 @@ resource "aws_lambda_function" "update_task_ips" {
   function_name    = "update-task-ips"
   role             = aws_iam_role.lambda_role.arn
   handler          = "index.handler"
-  runtime          = "nodejs14.x"
+  runtime          = "nodejs20.x"
   source_code_hash = filebase64sha256("lambda-ecs-privateip-dynamo.zip")
 
   environment {
@@ -125,17 +133,17 @@ resource "aws_ssm_document" "update_nginx" {
 }
 
 resource "aws_lambda_function" "trigger_ssm_command" {
-  filename         = "lambda.zip" # Path to your Lambda function zip file
+  filename         = "lambda-ssm-update-nginx.zip" # Path to your Lambda function zip file
   function_name    = "trigger-ssm-command"
   role             = aws_iam_role.lambda_role.arn
   handler          = "index.handler"
-  runtime          = "nodejs14.x"
-  source_code_hash = filebase64sha256("lambda.zip")
+  runtime          = "nodejs20.x"
+  source_code_hash = filebase64sha256("lambda-ssm-update-nginx.zip")
 
   environment {
     variables = {
       SSM_DOCUMENT_NAME = aws_ssm_document.update_nginx.name
-      INSTANCE_ID       = aws_instance.nat.id
+      INSTANCE_ID       = data.aws_instance.nat.id
     }
   }
 }
