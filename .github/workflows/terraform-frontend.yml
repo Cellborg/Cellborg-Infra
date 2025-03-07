@@ -33,7 +33,7 @@ jobs:
         working-directory: terraform-iac/frontend
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -input=false -var-file=beta.tfvars -out=tfplan
         working-directory: terraform-iac/frontend
 
       - name: Save Plan
