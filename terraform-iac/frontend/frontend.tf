@@ -22,7 +22,7 @@ data "aws_iam_role" "frontend_task_role" {
   name = "Cellborg-FrontendTaskRole"
 }
 
-resource "aws_launch_template" "ecs_spot_launch_template" {
+resource "aws_launch_template" "ecs_spot_launch_template_frontend" {
   name_prefix   = "ecs-spot-launch-template-"
   image_id      = "ami-08162bd4e1350c72c" # Replace with your desired AMI ID
   instance_type = "t2.small"
@@ -35,7 +35,7 @@ resource "aws_launch_template" "ecs_spot_launch_template" {
   }
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_instance_profile.name
+    name = aws_iam_instance_profile.ecs_instance_profile_frontend.name
   }
 
   user_data = base64encode(<<-EOF
@@ -50,13 +50,13 @@ resource "aws_launch_template" "ecs_spot_launch_template" {
   }
 }
 
-# Create IAM Instance Profile
-resource "aws_iam_instance_profile" "ecs_instance_profile" {
+# IAM Instance Profile. This is created in API.
+create "aws_iam_instance_profile" "ecs_instance_profile_frontend" {
   name = "ecsInstanceProfile"
   role = data.aws_iam_role.ecs_execution_role.name
 }
 
-resource "aws_autoscaling_group" "ecs_spot_asg" {
+resource "aws_autoscaling_group" "ecs_spot_asg_frontend" {
   desired_capacity     = 1
   max_size             = 1
   min_size             = 1
@@ -71,7 +71,7 @@ resource "aws_autoscaling_group" "ecs_spot_asg" {
 
     launch_template {
       launch_template_specification {
-        launch_template_id = aws_launch_template.ecs_spot_launch_template.id
+        launch_template_id = aws_launch_template.ecs_spot_launch_template_frontend.id
         version            = "$Latest"
       }
     }
@@ -85,7 +85,7 @@ resource "aws_ecs_capacity_provider" "frontend_ecs_spot_capacity_provider" {
   
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn         = aws_autoscaling_group.ecs_spot_asg.arn
+    auto_scaling_group_arn         = aws_autoscaling_group.ecs_spot_asg_frontend.arn
     managed_scaling {
       maximum_scaling_step_size = 2
       minimum_scaling_step_size = 1
@@ -95,7 +95,7 @@ resource "aws_ecs_capacity_provider" "frontend_ecs_spot_capacity_provider" {
   }
 }
 
-resource "aws_ecs_cluster_capacity_providers" "ecs_cluster_capacity_providers" {
+resource "aws_ecs_cluster_capacity_providers" "frontend_ecs_cluster_capacity_providers" {
   cluster_name = "cellborg-ecs-cluster"
   capacity_providers = [aws_ecs_capacity_provider.frontend_ecs_spot_capacity_provider.name]
   default_capacity_provider_strategy {
